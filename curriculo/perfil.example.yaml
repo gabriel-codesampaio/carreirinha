@@ -1,0 +1,39 @@
+# Exemplo/schema de curriculo/perfil.yaml (sem dados pessoais).
+# O arquivo real (curriculo/perfil.yaml) fica fora do git — veja .gitignore.
+# Copie este arquivo para perfil.yaml e preencha com dados reais.
+
+dados_pessoais:
+  nome: ""
+  email: ""
+  telefone: ""
+  site: ""
+  linkedin: ""
+  github: ""
+  localizacao: ""
+
+resumo: ""
+
+experiencias:
+  - empresa: ""
+    local: ""
+    cargo: ""
+    periodo: ""
+    contexto: "" # uma linha sobre o que a empresa/projeto faz, opcional
+    bullets:
+      - ""
+
+formacao:
+  - instituicao: ""
+    local: ""
+    curso: ""
+    periodo: ""
+
+certificacoes: []
+
+skills:
+  tecnicas: []
+  comportamentais: []
+
+idiomas: []
+
+projetos: []

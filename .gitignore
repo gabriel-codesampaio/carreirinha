@@ -1,0 +1,14 @@
+# Dados pessoais (PII) — nunca versionar
+curriculo/perfil.yaml
+curriculo/historico/
+curriculo/gerados/*
+!curriculo/gerados/README.md
+vagas/*
+!vagas/README.md
+
+# Segredos (credenciais de SMTP/API)
+.env
+.env.local
+
+# Node
+node_modules/
