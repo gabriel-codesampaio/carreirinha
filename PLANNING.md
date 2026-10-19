@@ -13,11 +13,12 @@ Agente pessoal que conhece toda a carreira do usuário, gera currículos sob med
 - [x] **`gerar-curriculo`** (skill) + **`carreira-agent`** (agente) — implementados e testados. Replica fielmente o `curriculo/template-original.docx` em `.claude/skills/gerar-curriculo/template.html`, convertido pra PDF via Chrome headless local (`scripts/html-to-pdf.mjs`, zero dependências npm).
 - [x] `curriculo/perfil.yaml` — preenchido com os dados reais de carreira do usuário (experiências, formação, skills, certificações), consolidado a partir dos currículos em `curriculo/historico/`.
 - [x] **Três skills de LinkedIn via MCP** (`mcp__chrome-devtools__*`, navegador com a sessão do usuário já logada): `linkedin-buscar-vagas` (aba Vagas, só leitura), `linkedin-vagas-posts` (rola o feed e classifica post a post), `linkedin-conectar-recrutadores` (envia convite de conexão de verdade — regras de segurança: teto por sessão, lista revisada antes de enviar, nunca em rajada). **Testada ao vivo em 2026-10-14** (`linkedin-vagas-posts`, 18 posts/4 vagas), e corrigida: o DOM do LinkedIn é ofuscado, então a extração usa `take_snapshot` (árvore de acessibilidade), não seletores CSS.
+- [x] **`linkedin-conectar-recrutadores` testada ao vivo em 2026-10-14**: 8 convites enviados com sucesso (busca "tech recruiter"), todos confirmados como "Pendente", sem captcha/checkpoint do LinkedIn. Achado importante: ao tentar ir além do teto de 15 (a pedido do usuário, pra chegar perto do limite semanal de 300), **o próprio modo automático do Claude Code bloqueou a continuação** via seu classificador de risco, mesmo com autorização explícita — não é um bug da skill, é um guardrail de sistema que não deve ser contornado. Parou em 8/sessão por decisão do usuário.
 - [x] **`linkedin-vagas-posts` ganhou filtro + critério de parada por quantidade**: antes de rolar, a skill agora sempre pergunta o filtro (padrão: skills técnicas do `perfil.yaml`) e separa resultado em "dentro do filtro" / "fora do filtro"; o critério de parada aceita "ache N vagas" (conta só as dentro do filtro), além de quantidade de posts ou tempo, com teto de segurança de ~80 posts/~15 scrolls pra nunca rolar indefinidamente.
 - [x] **Extração de tipo de contratação (CLT/PJ)** adicionada em `linkedin-vagas-posts` e `linkedin-buscar-vagas`, calibrada com 3 posts reais que o usuário apontou como bons exemplos (2026-10-14). Achado importante: a sigla "PJ" pode ser falso positivo (ex: post da PicPay usava "PJ" como nome de time/segmento de cliente, não como regime de contratação) — a extração só conta quando "CLT"/"PJ" está colado a um rótulo de contrato/regime/modelo.
 - [x] **Recomendação de modelo documentada nas 3 skills de LinkedIn**: Haiku 4.5 (volume alto de texto, decisão simples por item — melhor custo/benefício); `gerar-curriculo` continua reservado pra Sonnet 5/Opus 5, onde a qualidade de escrita compensa o custo maior.
 - [ ] Skill `buscar-vagas` (APIs legítimas tipo Adzuna/Arbeitnow) — ainda pendente, complementa as 3 de LinkedIn acima
-- [x] **Skill `enviar-email`** — implementada e testada em modo rascunho. Envia via SMTP do iCloud Mail (`smtp.mail.me.com`) como `seu-email@dominio.com`, com `nodemailer`. Modo padrão = preview, só dispara com `--confirm` + confirmação explícita do usuário. Checa duplicidade em `vagas/enviados.json`. **Falta só o usuário preencher o `.env`** (copiar de `.env.example`) com a senha de app do Apple ID antes do primeiro envio real.
+- [x] **Skill `enviar-email`** — implementada e testada em modo rascunho. Envia via SMTP do iCloud Mail (`smtp.mail.me.com`) pelo endereço configurado em `EMAIL_FROM`, com `nodemailer`. Modo padrão = preview, só dispara com `--confirm` + confirmação explícita do usuário. Checa duplicidade em `vagas/enviados.json`. **Falta só preencher o `.env`** (copiar de `.env.example`) com a senha de app do Apple ID antes do primeiro envio real.
 - [x] **Skills de apoio instaladas globalmente** (via `npx skills add`, disponíveis em qualquer projeto): `pdf` (anthropics, toolkit de PDF), `resume-bullet-writer`, `resume-quantifier`, `resume-ats-optimizer` (paramchoudhary/resumeskills) — o `carreira-agent` usa essas skills pra melhorar a escrita dos bullets e checar ATS antes de fechar um currículo
 - [x] **Padronização de pastas** — ver seção 6: tudo relacionado a currículo consolidado sob `curriculo/` (sem mais pastas com espaço/acento no nome), arquivos de `historico/` renomeados pra kebab-case
 
@@ -64,7 +65,7 @@ Todas as três param imediatamente e avisam o usuário se o LinkedIn mostrar qua
 
 ## 4. Envio de E-mail — skill `enviar-email` **[implementado]**
 
-- Envio via SMTP do **iCloud Mail** (`smtp.mail.me.com`), autenticando com o Apple ID + senha de app, enviando como `seu-email@dominio.com` (domínio customizado do iCloud+)
+- Envio via SMTP de qualquer provedor (iCloud Mail, Gmail, Outlook etc.), configurado em `.env` (host/porta/login/senha de app), enviando como o endereço definido em `EMAIL_FROM`
 - `nodemailer` monta o e-mail e anexa automaticamente o PDF gerado pra aquela vaga (`scripts/send-email.mjs`)
 - Log de envios (`vagas/enviados.json`) pra nunca duplicar candidatura pra mesma vaga/destinatário (checagem automática, só ignora com `--force`)
 - **Modo padrão = rascunho** (mostra o preview completo, não envia). Só dispara de fato com `--confirm` **depois** de uma confirmação explícita do usuário na conversa — ação externa e difícil de desfazer
@@ -103,7 +104,7 @@ carreira-generator/
 ├── curriculo/
 │   ├── perfil.yaml                    # base de carreira — fonte da verdade (PII, fora do git)
 │   ├── perfil.example.yaml            # schema sem PII (versionado)
-│   ├── template-original.docx         # template visual original enviado pelo usuário (referência, versionado)
+│   ├── template-original.docx         # template visual original fornecido pelo usuário (referência, versionado)
 │   ├── historico/                     # currículos antigos usados pra popular o perfil.yaml (PII, fora do git)
 │   │   ├── curriculo-geral-br.docx
 │   │   ├── dev-frontend.docx / .pdf
@@ -137,7 +138,7 @@ carreira-generator/
 
 1. ~~Template HTML/CSS + render de PDF (`gerar-curriculo`)~~ ✅
 2. ~~Schema da base de carreira (`perfil.yaml`) + agente (`carreira-agent`)~~ ✅
-3. ~~Skill `enviar-email` em modo rascunho/confirmação (SMTP iCloud + nodemailer)~~ ✅ — falta só o usuário preencher o `.env`
+3. ~~Skill `enviar-email` em modo rascunho/confirmação (SMTP iCloud + nodemailer)~~ ✅ — falta só preencher o `.env`
 4. ~~Preencher `curriculo/perfil.yaml` com os dados reais de carreira do usuário~~ ✅ — consolidado a partir dos currículos em `curriculo/historico/` (gitignored, contém PII)
 5. ~~Padronizar nomes de pasta/arquivo do projeto~~ ✅
 6. ~~Três skills de LinkedIn via MCP (`linkedin-buscar-vagas`, `linkedin-vagas-posts`, `linkedin-conectar-recrutadores`)~~ ✅ — `linkedin-vagas-posts` já testada ao vivo (18 posts/4 vagas, 2026-10-14); `linkedin-buscar-vagas` e `linkedin-conectar-recrutadores` ainda não foram testadas na prática, só escritas com o mesmo método validado

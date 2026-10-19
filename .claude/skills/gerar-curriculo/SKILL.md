@@ -1,11 +1,11 @@
 ---
 name: gerar-curriculo
-description: Gera um currículo em PDF sob medida para o usuário, a partir da base de carreira do projeto e (opcionalmente) de uma vaga específica. Use quando o pedido for para criar, gerar, atualizar ou adaptar um currículo / resume / CV em PDF.
+description: Gera um currículo em PDF sob medida pra quem usa o projeto, a partir da base de carreira (curriculo/perfil.yaml) e (opcionalmente) de uma vaga específica. Use quando o pedido for para criar, gerar, atualizar ou adaptar um currículo / resume / CV em PDF.
 ---
 
 # Gerar Currículo
 
-Gera um currículo em PDF usando o template visual do projeto (`template.html`, réplica fiel de `curriculo/template-original.docx`) e os dados reais de carreira do usuário.
+Gera um currículo em PDF usando o template visual do projeto (`template.html`, réplica fiel de `curriculo/template-original.docx`) e os dados reais de carreira de `curriculo/perfil.yaml`.
 
 ## Passo a passo
 

@@ -5,7 +5,7 @@ description: Rola o feed do LinkedIn (scroll) e analisa post por post pra identi
 
 # Vagas nos Posts do Feed do LinkedIn
 
-Muita vaga é divulgada como post normal no feed (ex: imagem "ESTAMOS CONTRATANDO", texto "banco de talentos", etc.) e não aparece na busca da aba Vagas. Essa skill rola o feed manualmente, lendo post por post, e separa o que é vaga do que não é — como o usuário faria manualmente, só que mais rápido.
+Muita vaga é divulgada como post normal no feed (ex: imagem "ESTAMOS CONTRATANDO", texto "banco de talentos", etc.) e não aparece na busca da aba Vagas. Essa skill rola o feed manualmente, lendo post por post, e separa o que é vaga do que não é — como usuário faria manualmente, só que mais rápido.
 
 ## Modelo recomendado (custo/benefício)
 
@@ -16,13 +16,13 @@ Essa skill é **volume alto de texto, complexidade baixa por decisão**: cada sn
 
 ## Pré-requisito
 
-Mesma coisa da `linkedin-buscar-vagas`: precisa de uma página logada no LinkedIn (`mcp__chrome-devtools__list_pages`). Se a sessão caiu, peça pro usuário logar manualmente — nunca digite credenciais por ele.
+Mesma coisa da `linkedin-buscar-vagas`: precisa de uma página logada no LinkedIn (`mcp__chrome-devtools__list_pages`). Se a sessão caiu, peça pro usuário logar manualmente — nunca digite credenciais por ele(a).
 
 ## Passo a passo
 
 1. **Ir pro feed**: `mcp__chrome-devtools__navigate_page` (`type: "url"`) para `https://www.linkedin.com/feed/`.
 
-2. **Perguntar o filtro, sempre, antes de começar a rolar**: pergunte ao usuário se ele quer filtrar por algo específico nessa busca (cargo, stack/tecnologia, senioridade, localização, modelo de trabalho remoto/híbrido/presencial). Deixe claro qual é a opção padrão se ele não especificar nada:
+2. **Perguntar o filtro, sempre, antes de começar a rolar**: pergunte ao usuário se ele(a) quer filtrar por algo específico nessa busca (cargo, stack/tecnologia, senioridade, localização, modelo de trabalho remoto/híbrido/presencial). Deixe claro qual é a opção padrão se ele(a) não especificar nada:
    - **Padrão (sem filtro customizado)**: usar as skills técnicas de `curriculo/perfil.yaml` (campo `skills.tecnicas`) como critério — considerar relevante qualquer vaga cujo cargo/stack mencionado tenha interseção razoável com essa lista (ex: React, Next.js, Node.js, TypeScript, frontend/fullstack).
    - Se o usuário der um filtro customizado (ex: "só remoto", "só sênior", "só backend"), use esse no lugar do padrão pra essa execução.
    - Guarde o filtro decidido — ele vai ser usado no passo 5 pra separar vaga relevante de vaga fora do filtro.
@@ -40,8 +40,8 @@ Mesma coisa da `linkedin-buscar-vagas`: precisa de uma página logada no LinkedI
    c. Pra cada bloco de post, **classifique você mesmo** (lendo o texto renderizado) se é vaga ou não, usando sinais como: "vaga", "contratando", "estamos buscando", "oportunidade", "envie seu currículo", "banco de talentos", cargo + modelo de trabalho, e-mail (`link "Abrir mailto:..."`) ou link de candidatura no texto.
 
 5. **Se for vaga, aplique o filtro do passo 2**: extraia empresa/autor do post, cargo, stack/requisitos, como se candidatar (e-mail, link `lnkd.in/...` ou link direto) **e o tipo de contratação (CLT/PJ)** — veja regras específicas logo abaixo. Depois classifique em um dos dois grupos:
-   - **Dentro do filtro** — bate com o filtro combinado (padrão: skills do perfil; ou o filtro customizado que o usuário pediu). Essas são o resultado principal.
-   - **Fora do filtro** — é uma vaga de verdade, mas não bate com o critério (ex: vaga de design ou de outra stack quando o filtro é React/Node.js). Não descarte: guarde numa lista separada e secundária, só pra não esconder nada do usuário, mas deixe claro que não é o foco dessa busca.
+   - **Dentro do filtro** — bate com o filtro combinado (padrão: skills do perfil; ou o filtro customizado que o usuário pediu). Essas são o resultado principal. **Dê "Gostei" nesse post** (procure no bloco do post, no snapshot, um botão tipo `button "Gostei"` / `"Curtir"` / "Reagir de maneira..." e clique nele via `mcp__chrome-devtools__click`) antes de seguir pro próximo — isso sinaliza pro algoritmo do feed do LinkedIn que esse tipo de conteúdo é relevante, ajudando a trazer mais vagas parecidas nas próximas rolagens/sessões. Curta só vagas dentro do filtro, nunca as de fora.
+   - **Fora do filtro** — é uma vaga de verdade, mas não bate com o critério (ex: vaga de design ou de outra stack quando o filtro é React/Node.js). Não descarte: guarde numa lista separada e secundária, só pra não esconder nada do usuário, mas deixe claro que não é o foco dessa busca. Não curta esses.
 
    **Extraindo CLT/PJ** (testado em 2026-10-14 com 3 posts de exemplo que o usuário marcou como bons):
    - Procure por um rótulo explícito no texto do post, geralmente perto de emoji/palavra-chave como "Modelo de contratação:", "Regime:", "Contratação:", "Tipo de contrato:" seguido de "CLT" ou "PJ" (ex: `📄 Modelo de contratação: PJ`). Quando existir, é o sinal mais confiável.
@@ -56,12 +56,12 @@ Mesma coisa da `linkedin-buscar-vagas`: precisa de uma página logada no LinkedI
 
 7. **Repita os passos 4-6** até atingir o critério de parada combinado no passo 3 (número de vagas dentro do filtro, quantidade de posts, ou tempo), bater no teto de segurança, ou o usuário mandar parar.
 
-8. **Ao terminar**: mostre ao usuário primeiro a lista das vagas **dentro do filtro**, já com o tipo de contratação de cada uma (CLT, PJ, ou "não informado no post") — essas são o resultado principal (se o critério era "ache N vagas", confirme se bateu a meta ou parou antes por causa do teto de segurança). Depois um resumo curto de quantas ficaram **fora do filtro** (sem detalhar todas, só a contagem e talvez 1-2 exemplos, a menos que ele peça a lista completa). Informe também quantos posts foram olhados no total. Salve tudo em `vagas/linkedin-posts-<AAAA-MM-DD>.json`, incluindo o filtro usado, o critério de parada, o campo `tipoContratacao` e um campo indicando se cada vaga ficou dentro ou fora do filtro (ver exemplo de estrutura num arquivo já gerado nessa pasta).
+8. **Ao terminar**: mostre ao usuário primeiro a lista das vagas **dentro do filtro**, já com o tipo de contratação de cada uma (CLT, PJ, ou "não informado no post") — essas são o resultado principal (se o critério era "ache N vagas", confirme se bateu a meta ou parou antes por causa do teto de segurança). Depois um resumo curto de quantas ficaram **fora do filtro** (sem detalhar todas, só a contagem e talvez 1-2 exemplos, a menos que ele(a) peça a lista completa). Informe também quantos posts foram olhados no total. Salve tudo em `vagas/linkedin-posts-<AAAA-MM-DD>.json`, incluindo o filtro usado, o critério de parada, o campo `tipoContratacao` e um campo indicando se cada vaga ficou dentro ou fora do filtro (ver exemplo de estrutura num arquivo já gerado nessa pasta).
 
 ## Observações importantes
 
 - Essa skill é mais lenta por natureza (rolar + ler), avise o usuário que pode levar um tempo pra cobrir muitos posts.
-- Nunca curta, comente, siga ou compartilhe nada durante a varredura — só leitura.
+- A única interação permitida durante a varredura é o "Gostei" em posts de vaga dentro do filtro (passo 5) — fora isso, nunca comente, siga ou compartilhe nada, é só leitura.
 - Se um post tiver imagem com informação da vaga (ex: cartaz "ESTAMOS CONTRATANDO") e o texto do DOM não capturar isso, avise que pode ter perdido vagas anunciadas só em imagem — ofereça tirar um screenshot (`mcp__chrome-devtools__take_screenshot`) do post específico se o usuário quiser conferir visualmente.
 - A reconexão do navegador (MCP) pode acontecer no meio de uma sessão — se um `pageId` parar de funcionar, rode `mcp__chrome-devtools__list_pages` de novo pra pegar o novo id. O login costuma persistir (cookies salvos no perfil do navegador), mas confirme antes de continuar.
 - Se aparecer checkpoint de segurança/captcha, pare e avise o usuário imediatamente.

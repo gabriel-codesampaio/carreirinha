@@ -2,7 +2,7 @@
   "name": "carreira-generator",
   "version": "1.0.0",
   "private": true,
-  "description": "Agente pessoal de carreira do usuário — geração de currículo em PDF, busca de vagas e candidaturas por e-mail.",
+  "description": "Agente pessoal de carreira — geração de currículo em PDF, busca de vagas e candidaturas por e-mail.",
   "type": "module",
   "dependencies": {
     "dotenv": "^16.4.5",

@@ -13,7 +13,7 @@ Mesmo perfil de tarefa que `linkedin-vagas-posts`: volume alto de texto (snapsho
 
 ## Pré-requisito
 
-Precisa haver uma página logada no LinkedIn nesse navegador (`mcp__chrome-devtools__list_pages`). Se não houver, ou a sessão caiu pra tela de login, avise o usuário e peça pra ele logar manualmente na janela do Chrome antes de continuar — **nunca digite e-mail/senha dele**.
+Precisa haver uma página logada no LinkedIn nesse navegador (`mcp__chrome-devtools__list_pages`). Se não houver, ou a sessão caiu pra tela de login, avise o usuário e peça pra ele(a) logar manualmente na janela do Chrome antes de continuar — **nunca digite e-mail/senha por ele(a)**.
 
 ## Passo a passo
 

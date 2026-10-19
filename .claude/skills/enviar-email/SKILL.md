@@ -1,6 +1,6 @@
 ---
 name: enviar-email
-description: Monta e envia um e-mail de candidatura pra uma vaga, com o currículo em PDF anexado, usando a conta seu-email@dominio.com (iCloud Mail). Use quando o pedido for pra candidatar/mandar currículo por e-mail pra uma vaga ou recrutador.
+description: Monta e envia um e-mail de candidatura pra uma vaga, com o currículo em PDF anexado, usando a conta de e-mail configurada em `.env` (qualquer provedor SMTP). Use quando o pedido for pra candidatar/mandar currículo por e-mail pra uma vaga ou recrutador.
 ---
 
 # Enviar E-mail de Candidatura
@@ -9,11 +9,12 @@ Monta o e-mail de candidatura e só dispara de fato com confirmação explícita
 
 ## Pré-requisito (uma vez só)
 
-Antes do primeiro envio real, o usuário precisa ter um `.env` na raiz do projeto (cópia de `.env.example` preenchida):
-- `SMTP_USER` / `SMTP_PASS`: login do Apple ID + uma "senha de app" gerada em https://appleid.apple.com → Fazer login e segurança → Senhas específicas de app
-- `EMAIL_FROM`: `"Seu Nome <seu-email@dominio.com>"`
+Antes do primeiro envio real, é preciso ter um `.env` na raiz do projeto (cópia de `.env.example` preenchida):
+- `SMTP_HOST` / `SMTP_PORT`: endereço do provedor SMTP (iCloud, Gmail, Outlook, SendGrid etc. — cada um documenta o seu)
+- `SMTP_USER` / `SMTP_PASS`: login da conta de e-mail + (se o provedor exigir, como iCloud/Gmail com 2FA) uma "senha de app" gerada nas configurações de segurança da conta
+- `EMAIL_FROM`: `"Nome Completo <email@dominio.com>"`
 
-Se o `.env` não existir ou faltar alguma variável, o script avisa e não envia nada — oriente o usuário a preencher antes de continuar. **Nunca peça pra ele colar a senha de app no chat** — ele preenche direto no arquivo `.env` local.
+Se o `.env` não existir ou faltar alguma variável, o script avisa e não envia nada — oriente o usuário a preencher antes de continuar. **Nunca peça pra ele(a) colar a senha de app no chat** — ele(a) preenche direto no arquivo `.env` local.
 
 ## Passo a passo
 
@@ -31,10 +32,10 @@ Se o `.env` não existir ou faltar alguma variável, o script avisa e não envia
    ```
    Isso roda em **modo rascunho por padrão** — mostra o preview completo (de/para/assunto/anexo/corpo) e não envia nada.
 
-4. **Mostrar o preview ao usuário** e perguntar explicitamente se pode enviar. Só prossiga com uma confirmação afirmativa clara dele (ex: "pode mandar", "sim", "confirma").
+4. **Mostrar o preview ao usuário** e perguntar explicitamente se pode enviar. Só prossiga com uma confirmação afirmativa clara dele(a) (ex: "pode mandar", "sim", "confirma").
 
 5. **Enviar de fato** (só depois da confirmação): repita o mesmo comando acrescentando `--confirm` no final.
-   - O script checa duplicidade: se já existe um envio registrado pro mesmo destinatário + assunto em `vagas/enviados.json`, ele recusa enviar de novo (evita candidatura duplicada). Avise o usuário se isso acontecer — só use `--force` se ele confirmar que quer reenviar mesmo assim.
+   - O script checa duplicidade: se já existe um envio registrado pro mesmo destinatário + assunto em `vagas/enviados.json`, ele recusa enviar de novo (evita candidatura duplicada). Avise o usuário se isso acontecer — só use `--force` se ele(a) confirmar que quer reenviar mesmo assim.
 
 6. **Confirmar o resultado** ao usuário (enviado com sucesso / erro) e apague o arquivo de corpo temporário se não precisar guardar.
 
