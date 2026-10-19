@@ -8,6 +8,23 @@ Veja [PLANNING.md](PLANNING.md) pra arquitetura, status e próximos passos. O ag
 
 **Pra quem é:** profissionais de tecnologia (dev, QA, dados, DevOps, produto) buscando vaga no Brasil ou remoto. Os termos de busca de recrutadores são de tech e o filtro de vagas é configurável por stack e cargo.
 
+## ⚠️ Aviso sobre o LinkedIn
+
+Este projeto **não tem nenhum vínculo com o LinkedIn**. As skills de LinkedIn controlam o seu navegador, logado na **sua** conta, pra ler o feed, buscar vagas e pessoas e enviar convites de conexão.
+
+O [Contrato do Usuário do LinkedIn](https://www.linkedin.com/legal/user-agreement) proíbe usar software, scripts ou robôs pra acessar o site, coletar dados ou automatizar ações. Usar estas skills pode levar a **verificações de segurança, restrição temporária ou bloqueio da sua conta**. O risco é seu: o software é fornecido "no estado em que se encontra", sem garantia (ver [licença](LICENSE)).
+
+O que o projeto faz pra reduzir esse risco:
+- **O login é sempre seu**, na janela do Chrome. O agente nunca digita e-mail nem senha.
+- **Ritmo de pessoa, não de robô:** espera entre convites, teto de convites por sessão e por dia, e teto de posts lidos por execução, tudo ajustável em `config/limites.md`.
+- **Para na hora** se aparecer captcha, checkpoint ou aviso de limite, e nunca tenta contornar.
+- **Ações com efeito real só com o seu aval.** Convites só pra quem você viu na lista; currículo só sai depois de você aprovar as vagas. O agente nunca comenta, manda mensagem nem clica em "Candidatar-se".
+
+Recomendações:
+- Comece com os valores do `config/limites.example.md` (15 convites por dia) e só aumente se a conta não mostrar nenhum aviso.
+- Não rode a rotina várias vezes no mesmo dia.
+- Se o LinkedIn pedir verificação, pare de usar as skills por alguns dias.
+
 ## Pré-requisitos
 
 | O quê | Pra quê | Como |
