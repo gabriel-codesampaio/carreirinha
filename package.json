@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Agente pessoal de carreira — geração de currículo em PDF, busca de vagas e candidaturas por e-mail.",
+  "license": "MIT",
   "type": "module",
   "dependencies": {
     "dotenv": "^16.4.5",

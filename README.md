@@ -53,3 +53,7 @@ npx skills add anthropics/skills --skill pdf -g -a claude-code
 | "manda minha candidatura por e-mail" | `enviar-email` |
 
 Ações com efeito real (convites, e-mail, gravar o perfil) sempre mostram o que vai acontecer e pedem confirmação.
+
+## Licença
+
+[MIT](LICENSE).
