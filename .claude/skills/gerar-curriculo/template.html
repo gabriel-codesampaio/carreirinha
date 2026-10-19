@@ -25,6 +25,12 @@
     text-transform: uppercase;
     margin: 0 0 2pt 0;
   }
+  .titulo {
+    text-align: center;
+    font-size: 12pt;
+    font-weight: bold;
+    margin: 0 0 4pt 0;
+  }
   .contato {
     text-align: center;
     font-size: 10pt;
@@ -65,6 +71,7 @@
     margin: 0;
     padding-left: 0.5in;
   }
+  ul.competencias li .grupo { font-weight: bold; }
   ul.bullets li {
     font-size: 11pt;
     margin: 0 0 2pt 0;
@@ -76,6 +83,7 @@
 
   <!-- ===== CABEÇALHO ===== -->
   <div class="nome">{{NOME}}</div>
+  <div class="titulo">{{TITULO}}</div>
   <div class="contato">{{ENDERECO}} &bull; {{TELEFONE}}</div>
   <div class="contato">{{EMAIL}} &bull; {{LINKEDIN_OU_SITE}}</div>
 
@@ -97,6 +105,23 @@
 
   <!-- Repetir o bloco .item acima para cada experiência relevante -->
 
+  <!-- ===== PROJETOS (opcional: 1 a 3 projetos relevantes pra vaga) ===== -->
+  <h2 class="secao">Projetos</h2>
+
+  <div class="item">
+    <p class="empresa">{{PROJETO_NOME}} — {{PROJETO_LINK}}</p>
+    <p class="cargo">{{PROJETO_STACK}}, {{PROJETO_PERIODO}}</p>
+    <ul class="bullets">
+      <li>{{PROJETO_DESTAQUE_1}}</li>
+    </ul>
+  </div>
+
+  <!-- ===== COMPETÊNCIAS (skills da vaga que o perfil tem primeiro) ===== -->
+  <h2 class="secao">Competências</h2>
+  <ul class="bullets competencias">
+    <li><span class="grupo">{{GRUPO_1}}:</span> {{SKILLS_GRUPO_1}}</li>
+  </ul>
+
   <!-- ===== FORMAÇÃO ===== -->
   <h2 class="secao">Formação</h2>
 
@@ -109,6 +134,12 @@
   <h2 class="secao">Certificações</h2>
   <ul class="bullets">
     <li>{{CERTIFICACAO_1}}</li>
+  </ul>
+
+  <!-- ===== IDIOMAS ===== -->
+  <h2 class="secao">Idiomas</h2>
+  <ul class="bullets">
+    <li>{{IDIOMA_1}}</li>
   </ul>
 
 </body>

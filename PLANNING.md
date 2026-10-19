@@ -1,152 +1,127 @@
 # Carreira Generator — Planejamento
 
-Agente pessoal que conhece toda a carreira do usuário, gera currículos sob medida e ajuda a disparar candidaturas (e-mail + LinkedIn assistido).
+Agente pessoal que conhece a carreira de quem usa o projeto, gera currículos sob medida e ajuda a disparar candidaturas (e-mail + LinkedIn assistido).
 
-**Stack escolhida:** Node.js + TypeScript
-**Abordagem LinkedIn:** assistente semi-automático via MCP de navegador (toda ação de candidatura é confirmada manualmente — nunca full-auto)
-**Arquitetura de execução:** em vez de um CLI Node solto, o projeto é construído como **agent + skills nativos do Claude Code** (`.claude/agents/`, `.claude/skills/`) — o usuário conversa com o `carreira-agent` dentro do Claude Code, que invoca cada skill conforme o pedido. Scripts Node (ex: HTML→PDF) viram recursos auxiliares dentro de cada skill, chamados via Bash, não um app separado para rodar por fora.
+**Arquitetura:** agent + skills nativos do Claude Code (`.claude/agents/`, `.claude/skills/`). A pessoa conversa com o `carreira-agent`, que lê o `SKILL.md` certo e executa. Scripts Node (PDF, e-mail, GitHub, diagnóstico) são recursos dentro de cada skill, chamados via Bash.
+**LinkedIn:** semi-automático via MCP de navegador (`mcp__chrome-devtools__*`), com a sessão do usuário. Login sempre manual; ações com efeito real só com autorização.
+**Template:** nada específico de um usuário nos arquivos versionados. Dados pessoais, preferências e histórico ficam fora do git.
 
----
-
-## Status atual
-
-- [x] **`gerar-curriculo`** (skill) + **`carreira-agent`** (agente) — implementados e testados. Replica fielmente o `curriculo/template-original.docx` em `.claude/skills/gerar-curriculo/template.html`, convertido pra PDF via Chrome headless local (`scripts/html-to-pdf.mjs`, zero dependências npm).
-- [x] `curriculo/perfil.yaml` — preenchido com os dados reais de carreira do usuário (experiências, formação, skills, certificações), consolidado a partir dos currículos em `curriculo/historico/`.
-- [x] **Três skills de LinkedIn via MCP** (`mcp__chrome-devtools__*`, navegador com a sessão do usuário já logada): `linkedin-buscar-vagas` (aba Vagas, só leitura), `linkedin-vagas-posts` (rola o feed e classifica post a post), `linkedin-conectar-recrutadores` (envia convite de conexão de verdade — regras de segurança: teto por sessão, lista revisada antes de enviar, nunca em rajada). **Testada ao vivo em 2026-10-14** (`linkedin-vagas-posts`, 18 posts/4 vagas), e corrigida: o DOM do LinkedIn é ofuscado, então a extração usa `take_snapshot` (árvore de acessibilidade), não seletores CSS.
-- [x] **`linkedin-conectar-recrutadores` testada ao vivo em 2026-10-14**: 8 convites enviados com sucesso (busca "tech recruiter"), todos confirmados como "Pendente", sem captcha/checkpoint do LinkedIn. Achado importante: ao tentar ir além do teto de 15 (a pedido do usuário, pra chegar perto do limite semanal de 300), **o próprio modo automático do Claude Code bloqueou a continuação** via seu classificador de risco, mesmo com autorização explícita — não é um bug da skill, é um guardrail de sistema que não deve ser contornado. Parou em 8/sessão por decisão do usuário.
-- [x] **`linkedin-vagas-posts` ganhou filtro + critério de parada por quantidade**: antes de rolar, a skill agora sempre pergunta o filtro (padrão: skills técnicas do `perfil.yaml`) e separa resultado em "dentro do filtro" / "fora do filtro"; o critério de parada aceita "ache N vagas" (conta só as dentro do filtro), além de quantidade de posts ou tempo, com teto de segurança de ~80 posts/~15 scrolls pra nunca rolar indefinidamente.
-- [x] **Extração de tipo de contratação (CLT/PJ)** adicionada em `linkedin-vagas-posts` e `linkedin-buscar-vagas`, calibrada com 3 posts reais que o usuário apontou como bons exemplos (2026-10-14). Achado importante: a sigla "PJ" pode ser falso positivo (ex: post da PicPay usava "PJ" como nome de time/segmento de cliente, não como regime de contratação) — a extração só conta quando "CLT"/"PJ" está colado a um rótulo de contrato/regime/modelo.
-- [x] **Recomendação de modelo documentada nas 3 skills de LinkedIn**: Haiku 4.5 (volume alto de texto, decisão simples por item — melhor custo/benefício); `gerar-curriculo` continua reservado pra Sonnet 5/Opus 5, onde a qualidade de escrita compensa o custo maior.
-- [ ] Skill `buscar-vagas` (APIs legítimas tipo Adzuna/Arbeitnow) — ainda pendente, complementa as 3 de LinkedIn acima
-- [x] **Skill `enviar-email`** — implementada e testada em modo rascunho. Envia via SMTP do iCloud Mail (`smtp.mail.me.com`) pelo endereço configurado em `EMAIL_FROM`, com `nodemailer`. Modo padrão = preview, só dispara com `--confirm` + confirmação explícita do usuário. Checa duplicidade em `vagas/enviados.json`. **Falta só preencher o `.env`** (copiar de `.env.example`) com a senha de app do Apple ID antes do primeiro envio real.
-- [x] **Skills de apoio instaladas globalmente** (via `npx skills add`, disponíveis em qualquer projeto): `pdf` (anthropics, toolkit de PDF), `resume-bullet-writer`, `resume-quantifier`, `resume-ats-optimizer` (paramchoudhary/resumeskills) — o `carreira-agent` usa essas skills pra melhorar a escrita dos bullets e checar ATS antes de fechar um currículo
-- [x] **Padronização de pastas** — ver seção 6: tudo relacionado a currículo consolidado sob `curriculo/` (sem mais pastas com espaço/acento no nome), arquivos de `historico/` renomeados pra kebab-case
+Última atualização: 2026-10-19.
 
 ---
 
-## 1. Base de Conhecimento de Carreira (`curriculo/perfil.yaml`)
+## Status
 
-Fonte única da verdade sobre a carreira do usuário. **[implementado]**
+### Base de carreira
+- [x] `curriculo/perfil.yaml` — fonte única da verdade, schema em `perfil.example.yaml` (inclui `titulo`, `stack` por experiência, `projetos` com `fontes`).
+- [x] **`linkedin-importar-perfil`** — lê o próprio perfil (Sobre, experiências, formação, certificados, competências, idiomas, projetos, contato) pelas páginas `details/` e mescla no perfil. Testada em 2026-10-19.
+- [x] **`github-importar-perfil`** — API pública do GitHub (`scripts/github-perfil.mjs`): fixados primeiro, linguagens, tópicos, READMEs. Testada em 2026-10-19.
+- [x] **Mescla única** ([docs/mescla-perfil.md](docs/mescla-perfil.md)) — LinkedIn é dono de experiências/formação/resumo; skills técnicas e projetos são a **união** das duas fontes, com deduplicação e fusão de projetos repetidos. Nenhuma importação remove itens.
 
-- **Dados pessoais**: nome, contato, links (LinkedIn, site) — já preenchido
-- **Resumo profissional** (pitch de 2-3 linhas)
-- **Experiências**: empresa, cargo, período, bullets de impacto
-- **Formação, certificações, skills, idiomas, projetos**
+### Currículo
+- [x] **`gerar-curriculo`** — junta perfil (fatos) + vaga (prioridades e linguagem). Lê vaga por texto, link (LinkedIn via MCP, outros via WebFetch) ou arquivo salvo; salva `vagas/vaga-*.json` com requisitos, palavras-chave e **aderência** (✅/🟡/❌ por requisito). Requisito não atendido nunca entra no currículo.
+- [x] Template (`template.html`, baseado no `template-original.docx`): título, resumo, Experiência, Projetos, Competências, Formação, Certificações, Idiomas. PDF via Chrome/Edge headless (`html-to-pdf.mjs`, zero dependências npm).
+- [x] Skills de apoio globais: `resume-bullet-writer`, `resume-ats-optimizer`, `resume-quantifier`, `pdf`.
 
-Preenchido/mantido diretamente por edição do arquivo (ou, futuramente, por uma entrevista guiada pelo `carreira-agent`). Contém PII — não deve sair deste projeto.
+### Vagas
+- [x] **`linkedin-vagas-posts`** — lê o feed post a post e separa vagas dentro/fora do filtro, com CLT/PJ. Testada várias vezes desde 2026-10-14.
+- [x] **`linkedin-buscar-vagas`** — aba Vagas, com termos e filtro de `config/filtro-vagas.md`. **Ainda não testada ao vivo.**
+- [x] Filtro único em `config/filtro-vagas.md`, usado pelas duas.
+- [ ] Busca de **publicações por palavra-chave** (`/search/results/content/?keywords=...&sortBy="date_posted"`) no lugar do feed. O feed recicla posts depois de ~50 (visto em 2026-10-19), e a rotina rendeu 0 vagas.
+- [ ] Skill `buscar-vagas` — APIs legítimas (Adzuna, Arbeitnow, Jobicy, RemoteOK).
 
-## 2. Gerador de Currículo (PDF) — skill `gerar-curriculo` **[implementado]**
+### Networking
+- [x] **`linkedin-conectar-recrutadores`** — 16 termos de busca, filtro por headline, fluxo "Conectar → Enviar sem nota" validado. Teto por sessão em `config/limites.md`. Progresso por termo em `vagas/progresso-recrutadores.md`. 30 convites numa sessão em 2026-10-19 sem bloqueio.
+- [x] **`linkedin-total-conexoes`** — lê "N conexões" da página de conexões.
+- [x] **`rotina-linkedin`** — gatilho manual ("bom dia, vamos rodar a rotina"): vagas nos posts → currículo por vaga compatível → e-mail pronto ou pendente → convites (teto diário) → recarrega o feed e repete só com posts novos (`vagas/posts-vistos.json`) → conexões desde a última rotina → uma confirmação pra enviar os e-mails → `vagas/rotina-linkedin.md` + `vagas/candidaturas.md`. Fluxo novo definido em 2026-10-20, **ainda não rodado**; a versão anterior rodou em 2026-10-19 (30/30 convites, 0 vagas no filtro).
 
-- Entrada: `curriculo/perfil.yaml` + descrição da vaga (texto/link), opcional
-- O agente seleciona/reordena as experiências e bullets mais relevantes pra vaga (sem inventar nada fora do perfil)
-- Template único HTML/CSS (`template.html`) que replica fielmente o `curriculo/template-original.docx` — layout ATS-safe, Calibri, sem colunas/ícones
-- Renderização para PDF via **Chrome/Edge headless local** (`scripts/html-to-pdf.mjs`) — zero dependência npm, usa o navegador já instalado na máquina
-- Saída: `curriculo/gerados/<empresa>-<cargo>-<data>.pdf`
+### Candidatura
+- [x] **`enviar-email`** — SMTP de qualquer provedor via `nodemailer`, modo rascunho por padrão, `--confirm` só com confirmação explícita, checa duplicidade em `vagas/enviados.json`. Usa o `vaga-*.json` da `gerar-curriculo`. E-mail em HTML com assinatura (`config/assinatura.*`, logo embutido via cid). `--testar` confere login sem enviar. Testado em 2026-10-19 com iCloud+ e domínio próprio. **Regra fixa: nenhum currículo sai sem o usuário ver as vagas e aprovar.**
 
-## 3. Busca de Vagas
+### Operação
+- [x] **`verificar-setup`** — diagnóstico (`scripts/verificar.mjs` + checagem do MCP e do login no LinkedIn), com o que fica bloqueado e como resolver.
+- [x] Configuração externa: `config/limites.md`, `config/filtro-vagas.md` (com `.example.md` versionados).
 
-Duas frentes complementares:
+---
 
-### a) LinkedIn via MCP de navegador **[implementado]** — três skills separadas
+## Achados importantes (não reaprender)
 
-Usam `mcp__chrome-devtools__*` controlando o Chrome com a sessão do usuário já logada (login sempre manual, nunca eu digitando credencial):
+- **DOM do LinkedIn é ofuscado**: seletores CSS não funcionam. Clique só com `uid` de `take_snapshot`; leitura de texto com `evaluate_script` + `innerText` funciona e é muito mais leve que snapshot.
+- **Modal "Adicionar nota" carrega com atraso**: esperar ~2,5 s antes do snapshot e conferir o nome no modal antes de clicar.
+- **Modal pedindo e-mail** ("insira o e-mail do usuário"): a pessoa só aceita convite de conhecido. Fechar e pular.
+- **Modo automático do Claude Code pode bloquear envios em massa** (visto em 2026-10-14 com 8 envios; em 2026-10-19 passou de 30). É guardrail de sistema: parar, nunca contornar.
+- **"PJ" solto no texto pode não ser regime de contratação** (ex.: nome de time). Só contar colado a "contratação/regime/modelo".
+- **"… mais" no LinkedIn** costuma vir com o texto inteiro já no DOM. Só expandir se o texto parar no meio da frase.
+- **API pública do GitHub** não expõe repositórios fixados; vêm do HTML do perfil.
+- **iCloud SMTP**: login = endereço **principal** `@icloud.com` + senha de app; o alias/domínio próprio vai só no `EMAIL_FROM`. Logar com o e-mail do Apple ID (quando não é `@icloud.com`) dá "Mailbox does not exist".
+- **Spam**: domínio sem DMARC cai no spam com facilidade. Comece com um `_dmarc` TXT `v=DMARC1; p=none; rua=mailto:<seu e-mail>`.
 
-- **`linkedin-buscar-vagas`** — monta a URL de busca da aba Vagas com os filtros pedidos (cargo, local, remoto/híbrido/presencial), extrai os cards de vaga via `take_snapshot` (árvore de acessibilidade — o DOM do LinkedIn é ofuscado, `evaluate_script` com seletores CSS não funciona), salva em `vagas/linkedin-vagas-<data>.json`. Só leitura.
-- **`linkedin-vagas-posts`** — rola o feed (via `evaluate_script` ajustando o `scrollTop` do container interno, não `window.scrollBy`) e lê post por post via `take_snapshot`, classificando cada um como vaga ou não e extraindo também o tipo de contratação (CLT/PJ) quando o post informar (muita vaga é divulgada como post comum, não aparece na busca da aba Vagas). Salva em `vagas/linkedin-posts-<data>.json`. Só leitura.
-- **`linkedin-conectar-recrutadores`** — busca tech recruiters e **envia convite de conexão de verdade** (única das três que muda o estado da conta). Regras de segurança: teto de ~15 convites/sessão, sempre mostra a lista de pessoas antes de enviar qualquer convite, espaça os envios (nunca em rajada), checa duplicidade em `vagas/linkedin-conexoes.json`, para na hora se aparecer captcha/checkpoint.
+---
 
-Todas as três param imediatamente e avisam o usuário se o LinkedIn mostrar qualquer verificação de segurança — nunca tentam contornar.
-
-### b) APIs legítimas de vagas **[a construir]** — skill `buscar-vagas`
-
-- Adzuna, Arbeitnow, Jobicy, RemoteOK — todas com API pública/gratuita, sem risco nenhum de conta
-- Normalizadas e salvas em `vagas/vagas-<data>.json`
-- Complementa o LinkedIn: cobre vagas que nem aparecem lá
-
-## 4. Envio de E-mail — skill `enviar-email` **[implementado]**
-
-- Envio via SMTP de qualquer provedor (iCloud Mail, Gmail, Outlook etc.), configurado em `.env` (host/porta/login/senha de app), enviando como o endereço definido em `EMAIL_FROM`
-- `nodemailer` monta o e-mail e anexa automaticamente o PDF gerado pra aquela vaga (`scripts/send-email.mjs`)
-- Log de envios (`vagas/enviados.json`) pra nunca duplicar candidatura pra mesma vaga/destinatário (checagem automática, só ignora com `--force`)
-- **Modo padrão = rascunho** (mostra o preview completo, não envia). Só dispara de fato com `--confirm` **depois** de uma confirmação explícita do usuário na conversa — ação externa e difícil de desfazer
-- Credenciais ficam em `.env` local (fora do git); `.env.example` documenta o que precisa ser preenchido
-
-## 5. Interface — conversa com o `carreira-agent` **[implementado]**
-
-Sem CLI separado: o usuário conversa com o agente `carreira-agent` dentro do Claude Code (ex: *"gera um currículo pra essa vaga de Dev Backend na empresa X"*, *"busca vagas de X remoto"*, *"manda minha candidatura por e-mail pra essa vaga"*) e ele aciona a skill certa.
-
-## 6. Estrutura de pastas (real, atualizada — padronizada em 2026-10-14)
-
-Tudo relacionado a currículo vive sob um único `curriculo/`, sem pastas com espaço/acento no nome (evita precisar de aspas em todo comando de shell) e com a fonte da verdade (`perfil.yaml`) separada do material de referência (`historico/`, `template-original.docx`) e da saída gerada (`gerados/`):
+## Estrutura de pastas
 
 ```
 carreira-generator/
 ├── .claude/
-│   ├── agents/
-│   │   └── carreira-agent.md          # agente que orquestra as skills
+│   ├── agents/carreira-agent.md
 │   └── skills/
-│       ├── gerar-curriculo/
-│       │   ├── SKILL.md
-│       │   ├── template.html          # réplica do template-original.docx
-│       │   └── scripts/
-│       │       └── html-to-pdf.mjs    # HTML → PDF via Chrome headless local
-│       ├── linkedin-buscar-vagas/
-│       │   └── SKILL.md               # aba Vagas, via MCP chrome-devtools, só leitura
-│       ├── linkedin-vagas-posts/
-│       │   └── SKILL.md               # rola o feed e classifica post a post, só leitura
+│       ├── verificar-setup/            # SKILL.md + scripts/verificar.mjs
+│       ├── linkedin-importar-perfil/   # SKILL.md
+│       ├── github-importar-perfil/     # SKILL.md + scripts/github-perfil.mjs
+│       ├── gerar-curriculo/            # SKILL.md + template.html + scripts/html-to-pdf.mjs
+│       ├── linkedin-buscar-vagas/      # SKILL.md
+│       ├── linkedin-vagas-posts/       # SKILL.md
 │       ├── linkedin-conectar-recrutadores/
-│       │   └── SKILL.md               # envia convite de verdade — regras de segurança à parte
-│       ├── buscar-vagas/              # (próximo passo — APIs legítimas, ex: Adzuna)
-│       └── enviar-email/
-│           ├── SKILL.md
-│           └── scripts/
-│               └── send-email.mjs     # SMTP (iCloud) via nodemailer, modo rascunho por padrão
+│       ├── linkedin-total-conexoes/
+│       ├── rotina-linkedin/
+│       └── enviar-email/               # SKILL.md + scripts/send-email.mjs
+├── config/
+│   ├── limites.example.md              # versionado
+│   ├── filtro-vagas.example.md         # versionado
+│   ├── limites.md                      # do usuário (fora do git)
+│   └── filtro-vagas.md                 # do usuário (fora do git)
+├── docs/
+│   └── mescla-perfil.md                # regras de união LinkedIn + GitHub
 ├── curriculo/
-│   ├── perfil.yaml                    # base de carreira — fonte da verdade (PII, fora do git)
-│   ├── perfil.example.yaml            # schema sem PII (versionado)
-│   ├── template-original.docx         # template visual original fornecido pelo usuário (referência, versionado)
-│   ├── historico/                     # currículos antigos usados pra popular o perfil.yaml (PII, fora do git)
-│   │   ├── curriculo-geral-br.docx
-│   │   ├── dev-frontend.docx / .pdf
-│   │   ├── dev-frontend-react.docx / .pdf
-│   │   ├── dev-frontend-senior.docx / .pdf
-│   │   ├── dev-javascript.pdf
-│   │   └── dev-senior-react-nextjs.pdf
-│   └── gerados/                       # currículos (PDF/HTML) gerados pela skill (PII, fora do git)
-│       └── README.md                  # único arquivo versionado dessa pasta
-├── vagas/
-│   ├── README.md                      # único arquivo versionado dessa pasta
-│   ├── linkedin-vagas-<data>.json     # resultado da aba Vagas (fora do git)
-│   ├── linkedin-posts-<data>.json     # resultado da varredura do feed (fora do git)
-│   ├── linkedin-conexoes.json         # log de convites enviados a recrutadores (fora do git)
-│   └── enviados.json                  # log de candidaturas enviadas por e-mail (fora do git)
-├── .env.example                       # schema de credenciais SMTP (sem segredos, versionado)
-├── .env                               # credenciais reais (fora do git)
-├── package.json                       # nodemailer + dotenv
+│   ├── perfil.example.yaml             # schema (versionado)
+│   ├── perfil.yaml                     # carreira do usuário (fora do git)
+│   ├── template-original.docx          # referência visual (versionado)
+│   ├── historico/                      # backups do perfil e currículos antigos (fora do git)
+│   └── gerados/                        # currículos gerados (fora do git, exceto README)
+├── vagas/                              # tudo fora do git, exceto README
+│   ├── vaga-<empresa>-<cargo>-<data>.json
+│   ├── linkedin-vagas-<data>.json
+│   ├── linkedin-posts-<data>.json
+│   ├── candidaturas.md                 # painel: aderência, currículo, status do envio
+│   ├── posts-vistos.json               # posts do feed já lidos
+│   ├── progresso-recrutadores.md
+│   ├── rotina-linkedin.md
+│   └── enviados.json
+├── .env.example                        # versionado
+├── .env                                # fora do git
+├── package.json                        # nodemailer + dotenv
 ├── PLANNING.md
 └── README.md
 ```
 
-## 7. Dependências
+## Dependências
 
-- `gerar-curriculo` → **zero dependências npm** (`html-to-pdf.mjs` usa só Node nativo + o Chrome/Edge já instalado)
-- `enviar-email` → `nodemailer` (SMTP + anexos) e `dotenv` (carrega `.env`), instaladas via `npm install`
-- `linkedin-buscar-vagas`, `linkedin-vagas-posts`, `linkedin-conectar-recrutadores` → **zero dependências npm**, usam só as ferramentas MCP `mcp__chrome-devtools__*` já disponíveis no ambiente
-- Skills de apoio instaladas globalmente (fora deste `package.json`, disponíveis em qualquer projeto): `pdf`, `resume-bullet-writer`, `resume-quantifier`, `resume-ats-optimizer`
+- npm: `nodemailer`, `dotenv` (`enviar-email`, `github-importar-perfil`).
+- Chrome ou Edge instalado (PDF do currículo).
+- MCP `chrome-devtools` conectado (todas as skills de LinkedIn).
+- `npx js-yaml` sob demanda pra validar o `perfil.yaml` (sem instalar).
+- Skills de apoio globais (opcionais): `pdf` (anthropics/skills), `resume-bullet-writer`, `resume-quantifier`, `resume-ats-optimizer` (paramchoudhary/resumeskills). Comandos de instalação no README.
 
-## 8. Ordem de implementação
+## Próximos passos
 
-1. ~~Template HTML/CSS + render de PDF (`gerar-curriculo`)~~ ✅
-2. ~~Schema da base de carreira (`perfil.yaml`) + agente (`carreira-agent`)~~ ✅
-3. ~~Skill `enviar-email` em modo rascunho/confirmação (SMTP iCloud + nodemailer)~~ ✅ — falta só preencher o `.env`
-4. ~~Preencher `curriculo/perfil.yaml` com os dados reais de carreira do usuário~~ ✅ — consolidado a partir dos currículos em `curriculo/historico/` (gitignored, contém PII)
-5. ~~Padronizar nomes de pasta/arquivo do projeto~~ ✅
-6. ~~Três skills de LinkedIn via MCP (`linkedin-buscar-vagas`, `linkedin-vagas-posts`, `linkedin-conectar-recrutadores`)~~ ✅ — `linkedin-vagas-posts` já testada ao vivo (18 posts/4 vagas, 2026-10-14); `linkedin-buscar-vagas` e `linkedin-conectar-recrutadores` ainda não foram testadas na prática, só escritas com o mesmo método validado
-7. Skill `buscar-vagas` — providers de APIs legítimas (Adzuna, Arbeitnow, Jobicy, RemoteOK)
+1. Testar a `linkedin-buscar-vagas` ao vivo.
+2. Busca de publicações por palavra-chave na `linkedin-vagas-posts` (e na rotina).
+3. Primeiro envio real pela `enviar-email`.
+4. Skill `buscar-vagas` com APIs públicas.
 
-## 9. Riscos e observações
+## Riscos
 
-- **E-mail**: nunca disparar de fato sem confirmação explícita do usuário a cada envio
-- **LinkedIn (leitura — `linkedin-buscar-vagas`, `linkedin-vagas-posts`)**: ritmo de navegação moderado, nunca em volume que pareça automação de verdade; parar na hora se aparecer captcha/checkpoint
-- **LinkedIn (conexões — `linkedin-conectar-recrutadores`)**: é a ação de maior risco de todo o projeto, porque muda o estado da conta — teto por sessão, lista sempre revisada antes de enviar, nunca em rajada; volume alto de convites é o padrão clássico que leva à restrição de conta
-- **PII**: `curriculo/perfil.yaml`, `curriculo/historico/`, `curriculo/gerados/` e tudo em `vagas/` (exceto os `README.md`) contêm dados pessoais — fora do controle de versão (`.gitignore`), já que o repositório é público no GitHub
+- **E-mail**: nunca disparar sem confirmação explícita a cada envio.
+- **LinkedIn (convites)**: maior risco do projeto, porque muda o estado da conta. Teto por sessão, espaçamento, parar em captcha/aviso de limite.
+- **LinkedIn (leitura)**: ritmo de pessoa navegando, nunca volume de robô.
+- **Dados pessoais**: `perfil.yaml`, `historico/`, `gerados/`, `vagas/`, `config/*.md` e `.env` ficam fora do git (a `verificar-setup` confere). O repositório é público.

@@ -5,6 +5,9 @@
  *
  * Uso:
  *   node html-to-pdf.mjs <entrada.html> <saida.pdf>
+ *
+ * Procura Chrome, Edge ou Chromium nos caminhos padrão de Windows, macOS e Linux.
+ * Navegador em outro lugar: defina CHROME_PATH (no .env ou no ambiente) com o caminho do executável.
  */
 import { existsSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
@@ -13,22 +16,42 @@ import { pathToFileURL } from "node:url";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
+// CHROME_PATH pode vir do .env; dotenv é opcional aqui pra o script seguir sem dependências.
+try { await import("dotenv/config"); } catch {}
+
 const execFileAsync = promisify(execFile);
 
 const CANDIDATE_BROWSERS = [
+  // Windows
   "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
   "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
   "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
   "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+  // macOS
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+  "/Applications/Chromium.app/Contents/MacOS/Chromium",
+  // Linux
+  "/usr/bin/google-chrome",
+  "/usr/bin/google-chrome-stable",
+  "/usr/bin/chromium",
+  "/usr/bin/chromium-browser",
+  "/usr/bin/microsoft-edge",
+  "/snap/bin/chromium",
 ];
 
 function findBrowser() {
+  const doAmbiente = process.env.CHROME_PATH;
+  if (doAmbiente) {
+    if (existsSync(doAmbiente)) return doAmbiente;
+    throw new Error(`CHROME_PATH aponta pra um arquivo que não existe: ${doAmbiente}`);
+  }
   for (const path of CANDIDATE_BROWSERS) {
     if (existsSync(path)) return path;
   }
   throw new Error(
-    "Não encontrei Chrome nem Edge instalado nos caminhos padrão. " +
-      "Edite CANDIDATE_BROWSERS em html-to-pdf.mjs com o caminho correto."
+    "Não encontrei Chrome, Edge nem Chromium nos caminhos padrão. " +
+      "Defina CHROME_PATH com o caminho do executável do navegador."
   );
 }
 

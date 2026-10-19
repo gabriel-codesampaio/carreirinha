@@ -4,6 +4,10 @@ curriculo/historico/
 curriculo/gerados/*
 !curriculo/gerados/README.md
 vagas/*
+config/*.md
+!config/*.example.md
+config/assinatura*
+!config/assinatura.example.*
 !vagas/README.md
 
 # Segredos (credenciais de SMTP/API)

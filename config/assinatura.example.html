@@ -1,0 +1,20 @@
+<!--
+  Assinatura dos e-mails da skill enviar-email.
+  Copie para config/assinatura.html e troque os dados. Faça o mesmo com assinatura.example.txt (versão em texto puro).
+  Imagem com caminho local (relativo a config/, ex.: assinatura-logo.png) vai embutida no e-mail, então aparece
+  sem o destinatário precisar "carregar imagens". Sem logo, apague a primeira <td>.
+  Use tabela e estilos inline: é o que Outlook e Gmail mostram de forma consistente.
+-->
+<table cellpadding="0" cellspacing="0" border="0" style="font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #222222;">
+  <tr>
+    <td style="padding-right: 10px; vertical-align: middle;">
+      <img src="assinatura-logo.png" width="70" height="70" alt="Logo" style="display: block; border: 0;">
+    </td>
+    <td style="vertical-align: middle; line-height: 1.4;">
+      <strong style="font-size: 12pt;">Seu Nome</strong><br>
+      &#9993;&#65039; <a href="mailto:voce@seudominio.com" style="color: #222222; text-decoration: none;">voce@seudominio.com</a><br>
+      &#128222; <a href="tel:+5500000000000" style="color: #222222; text-decoration: none;">+55 (00) 00000-0000</a><br>
+      &#128279; <a href="https://seusite.com" style="color: #7c3aed;">https://seusite.com</a>
+    </td>
+  </tr>
+</table>

@@ -11,6 +11,8 @@ dados_pessoais:
   github: ""
   localizacao: ""
 
+titulo: "" # headline do LinkedIn, opcional
+
 resumo: ""
 
 experiencias:
@@ -19,6 +21,7 @@ experiencias:
     cargo: ""
     periodo: ""
     contexto: "" # uma linha sobre o que a empresa/projeto faz, opcional
+    stack: [] # competências listadas no item do LinkedIn, opcional
     bullets:
       - ""
 
@@ -28,7 +31,7 @@ formacao:
     curso: ""
     periodo: ""
 
-certificacoes: []
+certificacoes: [] # texto simples, ex.: "Emissor – Nome (carga horária ou mmm/AAAA)"
 
 skills:
   tecnicas: []
@@ -36,4 +39,13 @@ skills:
 
 idiomas: []
 
-projetos: []
+projetos:
+  - nome: ""
+    descricao: "" # uma linha: o que é o projeto
+    link: "" # repositório
+    site: "" # deploy/demo, opcional
+    periodo: ""
+    stack: []
+    destaques:
+      - ""
+    fontes: [] # de onde veio: linkedin, github e/ou manual (ver docs/mescla-perfil.md)

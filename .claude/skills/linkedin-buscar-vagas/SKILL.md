@@ -1,6 +1,6 @@
 ---
 name: linkedin-buscar-vagas
-description: Busca vagas na aba "Vagas" do LinkedIn usando o navegador controlado via MCP (chrome-devtools), com os filtros que o usuário pedir (cargo, local, remoto/híbrido/presencial, senioridade). Use quando o pedido for pra buscar/procurar vagas no LinkedIn.
+description: Busca vagas na aba "Vagas" do LinkedIn usando o navegador controlado via MCP (chrome-devtools), com os termos e o filtro de config/filtro-vagas.md (ajustáveis na hora), separando as vagas dentro e fora do filtro. Use quando o pedido for pra buscar/procurar vagas no LinkedIn.
 ---
 
 # Buscar Vagas no LinkedIn (aba Vagas)
@@ -9,7 +9,7 @@ Busca vagas na aba de Vagas do LinkedIn (não confundir com a skill `linkedin-va
 
 ## Modelo recomendado (custo/benefício)
 
-Mesmo perfil de tarefa que `linkedin-vagas-posts`: volume alto de texto (snapshots de página grandes), complexidade baixa por decisão (ler card de vaga, extrair campos). **Use Haiku 4.5** — mais barato por token e suficiente pra seguir estas instruções (`/model` pra trocar a sessão, ou `model: haiku` se chamar via Agent tool). Reserve Sonnet 5/Opus 5 pra skill `gerar-curriculo`, onde a qualidade da escrita importa de verdade.
+Mesmo perfil de tarefa que `linkedin-vagas-posts`: volume alto de texto (snapshots de página grandes), complexidade baixa por decisão (ler card de vaga, extrair campos). **Use Haiku 5.5** — mais barato por token e suficiente pra seguir estas instruções (`/model` pra trocar a sessão, ou `model: haiku` se chamar via Agent tool). Reserve Sonnet 5.5/Opus 5.5 pra skill `gerar-curriculo`, onde a qualidade da escrita importa de verdade.
 
 ## Pré-requisito
 
@@ -17,7 +17,9 @@ Precisa haver uma página logada no LinkedIn nesse navegador (`mcp__chrome-devto
 
 ## Passo a passo
 
-1. **Reunir os filtros**: pergunte (se não tiver sido dito) cargo/palavras-chave, localização, modelo de trabalho (remoto/híbrido/presencial) e, se relevante, senioridade.
+1. **Carregar o filtro**: leia `config/filtro-vagas.md` (ou `config/filtro-vagas.example.md`; sem nenhum dos dois, as skills técnicas de `curriculo/perfil.yaml`). É o mesmo filtro da `linkedin-vagas-posts`.
+   - Dele saem os **termos de busca**: um por cargo da seção "Cargos que entram" (ex.: `desenvolvedor front-end`, `react developer`), e o modelo de trabalho/local da seção "Local e modelo de trabalho".
+   - Mostre um resumo de uma linha do que vai buscar e pergunte se quer ajustar algo só nessa execução (cargo, local, modelo). O que o usuário disser na hora vale por cima do arquivo, sem editá-lo.
 
 2. **Montar a URL de busca** e navegar com `mcp__chrome-devtools__navigate_page` (`type: "url"`):
    ```
@@ -31,11 +33,11 @@ Precisa haver uma página logada no LinkedIn nesse navegador (`mcp__chrome-devto
 
    A lista de vagas normalmente é renderizada numa área que rola por dentro (não pela janela toda) — se precisar carregar mais resultados pra baixo da lista, ache o container com `scrollHeight > clientHeight` via `evaluate_script` e role ele diretamente (`el.scrollTop = el.scrollHeight`), do jeito documentado na skill `linkedin-vagas-posts`.
 
-5. **Mostrar um resumo ao usuário**: lista enxuta (cargo — empresa — local — link), nunca abrindo/candidatando a nenhuma automaticamente.
+5. **Classificar e mostrar**: aplique o filtro a cada card (cargo, empresa, local e o que mais o card mostrar) e separe em **dentro do filtro** e **fora do filtro**, como a `linkedin-vagas-posts` faz. Mostre primeiro as de dentro (cargo — empresa — local — link) e só a contagem das de fora. Se buscou mais de um termo, junte os resultados sem repetir a mesma vaga. Nunca abra nem candidate a nenhuma automaticamente.
 
    **Sobre tipo de contratação (CLT/PJ)**: o card compacto da lista de vagas normalmente não mostra isso — só aparece na descrição completa da vaga, que exige abrir cada uma individualmente. Por padrão, **não abra todas as vagas só pra checar esse campo** (isso tornaria a busca bem mais lenta); marque como `"não informado na lista"` e ofereça checar sob demanda se o usuário quiser esse detalhe pra alguma vaga específica (passo 7). Quando for checar, procure um rótulo explícito ("Modelo de contratação", "Regime", "Tipo de contrato" + CLT/PJ) — **"PJ" sozinho no texto pode ser outra coisa** (nome de time, segmento de cliente, produto etc., não o regime da vaga), então só conte quando estiver claramente ligado a uma palavra de contrato/regime.
 
-6. **Salvar o resultado** em `vagas/linkedin-vagas-<AAAA-MM-DD>.json` (array com os mesmos campos extraídos, mais a query usada).
+6. **Salvar o resultado** em `vagas/linkedin-vagas-<AAAA-MM-DD>.json` (sufixo `-runN` se já existir no dia), com os termos e o filtro usados e um campo `dentroDoFiltro` em cada vaga. Para gerar currículo de uma delas, a `gerar-curriculo` lê esse arquivo.
 
 7. Se o usuário quiser ver detalhes de uma vaga específica da lista, aí sim navegue até o link dela e leia o conteúdo — mas **nunca clique em "Candidatar-se"/"Easy Apply" sozinho**, isso é sempre decisão explícita do usuário.
 

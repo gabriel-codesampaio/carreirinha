@@ -1,39 +1,111 @@
 ---
 name: gerar-curriculo
-description: Gera um currículo em PDF sob medida pra quem usa o projeto, a partir da base de carreira (curriculo/perfil.yaml) e (opcionalmente) de uma vaga específica. Use quando o pedido for para criar, gerar, atualizar ou adaptar um currículo / resume / CV em PDF.
+description: Gera um currículo em PDF sob medida juntando duas fontes, a base de carreira (curriculo/perfil.yaml) e a vaga pedida (texto, link ou vaga já salva). Lê a vaga, cruza requisitos com o perfil, mostra a aderência e monta o currículo com a linguagem e as prioridades da vaga, sem inventar nada. Use quando o pedido for para criar, gerar, atualizar ou adaptar um currículo / resume / CV em PDF.
 ---
 
 # Gerar Currículo
 
-Gera um currículo em PDF usando o template visual do projeto (`template.html`, réplica fiel de `curriculo/template-original.docx`) e os dados reais de carreira de `curriculo/perfil.yaml`.
+Monta um currículo em PDF com o template do projeto (`template.html`, baseado em `curriculo/template-original.docx`) a partir de **duas fontes**:
+
+| Fonte | O que dá |
+|---|---|
+| `curriculo/perfil.yaml` | **Os fatos**: experiências, bullets, projetos, skills, formação. Nada entra no currículo se não estiver aqui. |
+| A vaga | **As prioridades e a linguagem**: o que vem primeiro, quais termos usar, qual título, qual idioma, o que cortar. |
+
+O perfil é a base completa; o currículo é um recorte dela pra aquela vaga.
+
+## Modelo recomendado
+
+**Sonnet 5.5 ou Opus 5.5.** A qualidade de escrita e o cruzamento perfil × vaga compensam o custo.
 
 ## Passo a passo
 
-1. **Carregar a base de carreira**
-   - Leia `curriculo/perfil.yaml`.
-   - Se o arquivo não existir ou estiver com os campos vazios/placeholder, avise o usuário e ajude a preencher antes de gerar qualquer PDF — nunca gere um currículo com dados fictícios ou incompletos.
+### 1. Carregar o perfil
 
-2. **Entender a vaga (se houver)**
-   - Se o usuário forneceu uma descrição de vaga, um link ou colou o texto de um anúncio, leia com atenção: cargo, stack/skills pedidas, responsabilidades.
-   - Use isso para **selecionar e priorizar** quais experiências e bullets do `perfil.yaml` entram no currículo (as mais relevantes pra vaga primeiro) e para ajustar o resumo profissional (2-3 linhas) com as palavras-chave da vaga — sem inventar nada que não esteja em `perfil.yaml`.
-   - Se não houver vaga específica, gere uma versão genérica usando as experiências mais recentes/relevantes.
+- Leia `curriculo/perfil.yaml`.
+- Se não existir ou estiver vazio/placeholder: pare e sugira `linkedin-importar-perfil` e `github-importar-perfil`. Nunca gere currículo com dados fictícios.
 
-3. **Montar o HTML**
-   - Copie `.claude/skills/gerar-curriculo/template.html` para um novo arquivo em `curriculo/gerados/<empresa-ou-generico>-<cargo>-<AAAA-MM-DD>.html`.
-   - Substitua os placeholders (`{{NOME}}`, `{{EMPRESA}}`, `{{BULLET_1}}` etc.) pelos dados reais, duplicando o bloco `<div class="item">...</div>` de experiência para cada vaga incluída.
-   - Remova qualquer placeholder/bloco não usado (ex.: seção de certificações, se não houver nenhuma).
-   - Não altere o CSS do template a menos que o usuário peça explicitamente — ele já replica o layout aprovado.
+### 2. Obter a vaga
 
-4. **Gerar o PDF**
-   - Rode: `node ".claude/skills/gerar-curriculo/scripts/html-to-pdf.mjs" "<caminho-do-html>" "<caminho-do-pdf>"`
-   - O script usa o Chrome/Edge já instalado na máquina (sem dependências npm). O PDF sai no mesmo diretório `curriculo/gerados/`, mesmo nome-base do HTML.
+Aceite qualquer uma destas formas:
 
-5. **Confirmar**
-   - Informe ao usuário o caminho do PDF gerado e um resumo do que foi priorizado/adaptado para a vaga (se houver).
-   - Pergunte se ele quer ajustes antes de considerar finalizado (tom, bullets, seleção de experiências).
+| Entrada | Como ler |
+|---|---|
+| Texto colado | Use direto. |
+| Link do LinkedIn (`linkedin.com/jobs/view/...`) | Navegador MCP: `navigate_page` + `evaluate_script` lendo `document.querySelector('main').innerText`. Precisa da sessão logada. |
+| Outro link (Gupy, Greenhouse, Lever, site da empresa…) | `WebFetch`. Se vier vazio (página feita em JavaScript), use o navegador MCP. |
+| Vaga já salva | Procure em `vagas/vaga-*.json`, `vagas/linkedin-vagas-*.json` e `vagas/linkedin-posts-*.json` pelo cargo/empresa citados. |
+| Nenhuma vaga | Pergunte se é pra gerar um currículo genérico. Se sim, use `titulo` e `resumo` do perfil e as experiências mais recentes; pule os passos 3 e 4. |
 
-## Observações importantes
+Extraia e salve em `vagas/vaga-<empresa>-<cargo>-<AAAA-MM-DD>.json` (nomes em kebab-case). A `enviar-email` reaproveita esse arquivo:
 
-- Nunca invente cargos, empresas, datas ou números que não estejam em `curriculo/perfil.yaml`. Adaptar para uma vaga = reordenar/reescrever com base no que é real, não fabricar conquistas.
-- Arquivos `.html` intermediários podem ficar em `curriculo/gerados/` como rascunho/histórico, mas o entregável final é sempre o `.pdf`.
-- `curriculo/perfil.yaml` contém dados pessoais (PII) — não deve ser exposto fora deste projeto.
+```json
+{
+  "empresa": "", "cargo": "", "senioridade": "", "local": "", "modelo": "remoto|híbrido|presencial",
+  "contratacao": "CLT|PJ|não informado", "idioma": "pt|en|es",
+  "requisitos_obrigatorios": [], "requisitos_desejaveis": [], "responsabilidades": [],
+  "palavras_chave": [], "como_candidatar": "", "link": "", "contato": "",
+  "aderencia": {}
+}
+```
+
+`palavras_chave`: tecnologias, ferramentas, metodologias e termos de domínio que aparecem na vaga, **escritos como na vaga** (ex.: "ReactJS", "Testes automatizados", "Design System").
+
+### 3. Cruzar vaga × perfil (aderência)
+
+Para cada requisito obrigatório e desejável, procure evidência no perfil (`skills`, `stack` e `bullets` das experiências, `projetos`):
+
+| Status | Quando |
+|---|---|
+| ✅ atende | Há evidência explícita (skill listada **e** usada em experiência ou projeto). |
+| 🟡 parcial | Só aparece na lista de skills, só em projeto pessoal, ou é algo equivalente (ex.: vaga pede Vue, perfil tem React). |
+| ❌ não atende | Não há nada no perfil. |
+
+Guarde em `aderencia` no JSON da vaga (`{ "requisito": { "status": "atende|parcial|nao", "evidencia": "onde está no perfil" } }`) e **mostre ao usuário uma tabela curta** antes de montar o currículo: aderência geral (ex.: "8 de 10 obrigatórios"), os ❌ e os 🟡. Os ❌ **não entram no currículo**; se o usuário disser que tem aquela experiência, ela vai primeiro pro `perfil.yaml` (com `fontes: [manual]` se for projeto) e só depois pro currículo.
+
+### 4. Decidir o conteúdo a partir da vaga
+
+- **Título** (linha abaixo do nome): o cargo da vaga, **se** o perfil tiver experiência equivalente (ex.: vaga "Desenvolvedor Front-end Sênior", perfil com cargos front-end sênior). Se não tiver, use um título real do perfil que seja o mais próximo.
+- **Resumo** (2-3 linhas): reescrito a partir do `resumo` do perfil, focado no que a vaga pede, com 3 a 5 `palavras_chave` atendidas. Só fatos do perfil.
+- **Experiências**: todas as relevantes, da mais recente pra mais antiga. Em cada uma, **escolha e reordene os bullets** pelos requisitos que eles comprovam (3 a 6 bullets na mais relevante, 2 a 4 nas demais). Cargos antigos e sem relação com a vaga podem sair.
+  - Pode reescrever um bullet pra usar o termo da vaga quando for **o mesmo fato** (perfil "component library" → vaga "Design System"). Não pode acrescentar tecnologia, número ou resultado que o bullet não tem.
+  - Métricas reais do perfil (ex.: deploy de 20 min pra menos de 1 min, custo -70%) têm prioridade, se forem relevantes pra vaga.
+- **Projetos**: 1 a 3 projetos do perfil que comprovem requisitos que as experiências não cobrem, ou quando a vaga pedir portfólio/GitHub. Nenhum relevante: remova a seção.
+- **Competências**: 3 a 5 grupos (ex.: "Front-end", "Testes", "Ferramentas"), com as skills que a vaga pede e o perfil tem **primeiro**, usando a grafia da vaga quando for a mesma coisa (ATS procura o termo exato). Depois, no máximo 4 a 6 skills relevantes por grupo. Não liste as 75 skills do perfil.
+- **Formação, certificações, idiomas**: do perfil. Certificações só as relacionadas à vaga. Se a vaga pedir um idioma, mostre o nível real do perfil.
+- **Idioma do currículo**: o idioma da vaga. Traduza fielmente o que estiver em outro idioma no perfil, sem acrescentar nada.
+- **Tamanho**: 1 página para até ~5 anos de experiência relevante; no máximo 2.
+
+### 5. Revisar a escrita (opcional, recomendado)
+
+Se as skills estiverem instaladas, passe os bullets escolhidos por `resume-bullet-writer` (verbo forte + resultado) e o currículo final por `resume-ats-optimizer` com o texto da vaga. **Não use números estimados** sugeridos por `resume-quantifier` sem o usuário confirmar que são reais.
+
+### 6. Montar o HTML
+
+- Copie `.claude/skills/gerar-curriculo/template.html` para `curriculo/gerados/<empresa-ou-generico>-<cargo>-<AAAA-MM-DD>.html`.
+- Substitua os placeholders e duplique os blocos repetíveis (`.item` de experiência e de projeto, `<li>` de competências, certificações e idiomas).
+- Remova toda seção sem conteúdo e todo placeholder que sobrar (`grep -n "{{" <arquivo>` tem que voltar vazio).
+- Não mexa no CSS sem o usuário pedir.
+
+### 7. Gerar o PDF
+
+```
+node ".claude/skills/gerar-curriculo/scripts/html-to-pdf.mjs" "<html>" "<pdf>"
+```
+
+O script usa o Chrome/Edge instalado (sem dependências npm). Confira o número de páginas (`grep -ac "/Type /Page$" <pdf>`) e corte bullets se passou do tamanho do passo 4.
+
+### 8. Entregar
+
+- Caminho do PDF e do JSON da vaga.
+- Aderência em uma linha e os requisitos não atendidos.
+- O que foi priorizado (título, experiências e bullets que entraram, projetos, termos da vaga usados).
+- Registre (ou atualize) a vaga em `vagas/candidaturas.md`: data, empresa, cargo, aderência, caminho do PDF, como se candidatar e status (`currículo pronto`). O formato está na `rotina-linkedin`.
+- Pergunte se quer ajustes. Se for se candidatar por e-mail, a `enviar-email` usa esse PDF e o JSON da vaga.
+- **Chamada pela `rotina-linkedin`**: não pergunte nada (nem o "currículo genérico?" do passo 2, nem os ajustes). A rotina decide o que fazer com a vaga.
+
+## Regras que não mudam
+
+- Nunca invente cargo, empresa, data, número, tecnologia ou conquista. Adaptar = escolher, ordenar e reescrever o que é real.
+- Requisito ❌ nunca aparece como se o usuário tivesse.
+- `curriculo/perfil.yaml`, `curriculo/gerados/` e `vagas/` contêm dados pessoais e ficam fora do git.
