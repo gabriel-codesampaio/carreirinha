@@ -15,7 +15,8 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import "dotenv/config";
+// dotenv é opcional: o diagnóstico precisa rodar mesmo antes do npm install, pra dizer que ele falta.
+try { await import("dotenv/config"); } catch {}
 
 const args = process.argv.slice(2);
 const rede = args.includes("--rede");
@@ -97,7 +98,7 @@ if (!perfil) {
 // ---------- E-mail (.env) ----------
 const env = ler(".env");
 if (!env) {
-  add("E-mail", ".env", "erro", "não existe", "Copie .env.example → .env e preencha", "enviar-email");
+  add("E-mail", ".env", "aviso", "não existe (só é preciso pra enviar candidaturas por e-mail)", "Copie .env.example → .env e preencha", "enviar-email");
 } else {
   for (const k of ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "EMAIL_FROM"]) {
     const v = (env.match(new RegExp(`^${k}=(.*)$`, "m")) ?? [])[1]?.trim().replace(/^"|"$/g, "");
