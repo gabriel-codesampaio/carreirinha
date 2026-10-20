@@ -68,6 +68,7 @@ npx skills add anthropics/skills --skill pdf -g -a claude-code
 | "quantas conexões eu tenho?" | `linkedin-total-conexoes` |
 | "roda a rotina do LinkedIn" | `rotina-linkedin` |
 | "manda minha candidatura por e-mail" | `enviar-email` |
+| "faz a limpeza" (currículos e vagas com mais de 1 semana) | `limpar-dados` |
 
 Ações com efeito real (convites, e-mail, gravar o perfil) sempre mostram o que vai acontecer e pedem confirmação.
 

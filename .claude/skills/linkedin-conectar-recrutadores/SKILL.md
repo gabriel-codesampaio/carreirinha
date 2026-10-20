@@ -38,13 +38,15 @@ Precisa de uma página logada no LinkedIn (`mcp__chrome-devtools__list_pages`). 
    7. `talent acquisition specialist`
    8. `talent partner` (comum em startups/scale-ups)
    9. `tech talent acquisition`
-   10. `headhunter TI` / `headhunter tecnologia` (consultorias de hunting)
-   11. `software engineering recruiter`
-   12. `technical sourcer` / `tech sourcer` (sourcers fazem o primeiro contato)
-   13. `analista de recrutamento e seleção TI`
-   14. `consultora de recrutamento tech`
-   15. `people partner tech` / `HRBP tecnologia` (menos focado em vaga, use por último)
-   16. `frontend recruiter` / `recrutador front-end` (poucos resultados; troque pelo nicho de quem usa o projeto, conforme `config/filtro-vagas.md`)
+   10. `talent acquisition` (termo puro, bem amplo; filtre pela headline com rigor)
+   11. `talent acquisition analyst` / `talent acquisition partner` / `talent acquisition manager`
+   12. `headhunter TI` / `headhunter tecnologia` (consultorias de hunting)
+   13. `software engineering recruiter`
+   14. `technical sourcer` / `tech sourcer` (sourcers fazem o primeiro contato)
+   15. `analista de recrutamento e seleção TI`
+   16. `consultora de recrutamento tech`
+   17. `people partner tech` / `HRBP tecnologia` (menos focado em vaga, use por último)
+   18. `frontend recruiter` / `recrutador front-end` (poucos resultados; troque pelo nicho de quem usa o projeto, conforme `config/filtro-vagas.md`)
 
    **Progresso de cada termo** fica em `vagas/progresso-recrutadores.md` (fora do git, é dado de quem usa o projeto). Leia esse arquivo no início: comece pelo termo 🟡 em uso, na página indicada; se não houver, pelo primeiro termo da lista que não está lá. Se o arquivo não existir, crie com o cabeçalho `| Status | Termo | Última página | Atualizado em | Observação |`. **No fim da sessão, atualize** a linha de cada termo usado (status ⛔ esgotado / 🟡 em uso, última página, data e quem sobrou na última página).
 
