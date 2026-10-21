@@ -13,6 +13,9 @@
  *     --attach "curriculo/gerados/empresa-cargo-2026-10-14.pdf" \
  *     [--confirm] [--force] [--sem-assinatura]
  *
+ * Cópia oculta: se EMAIL_BCC estiver no .env (um ou mais endereços separados por vírgula), todo envio
+ * vai com esses endereços em CCO.
+ *
  * Assinatura: se existir config/assinatura.html, o e-mail sai em HTML com ela no fim (imagens com caminho
  * local, relativo a config/, vão embutidas via cid). config/assinatura.txt vai no fim da versão em texto.
  *
@@ -48,7 +51,10 @@ function parseArgs(argv) {
   return out;
 }
 
-const LOG_PATH = resolve("vagas/enviados.json");
+const bccConfigurado = () =>
+  (process.env.EMAIL_BCC || "").split(",").map((e) => e.trim()).filter(Boolean);
+
+const LOG_PATH =resolve("vagas/enviados.json");
 const CONFIG_DIR = resolve("config");
 
 const escaparHtml = (t) =>
@@ -233,6 +239,8 @@ async function main() {
   console.log(`De:         ${process.env.EMAIL_FROM || "(EMAIL_FROM não configurado no .env)"}`);
   console.log(`Para:       ${args.to}`);
   console.log(`Assunto:    ${args.subject}`);
+  const bcc = bccConfigurado();
+  console.log(`CCO:        ${bcc.length ? bcc.join(", ") : "(nenhum)"}`);
   console.log(`Anexo:      ${attachmentPath || "(nenhum)"}`);
   console.log(`Assinatura: ${corpo.assinatura || "(nenhuma)"}`);
   console.log("─────────────────────────────────────────────────");
@@ -250,6 +258,7 @@ async function main() {
   const mail = {
     from: process.env.EMAIL_FROM,
     to: args.to,
+    ...(bcc.length ? { bcc } : {}),
     subject: args.subject,
     text: corpo.text,
     ...(corpo.html ? { html: corpo.html } : {}),
@@ -261,6 +270,7 @@ async function main() {
   await appendLog({
     to: args.to,
     subject: args.subject,
+    ...(bcc.length ? { bcc } : {}),
     attachment: attachmentPath,
     sentAt: new Date().toISOString(),
     messageId: info.messageId,

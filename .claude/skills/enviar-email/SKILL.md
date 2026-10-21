@@ -15,6 +15,7 @@ Antes do primeiro envio real, é preciso ter um `.env` na raiz do projeto (cópi
 - `SMTP_HOST` / `SMTP_PORT`: endereço do provedor SMTP (iCloud, Gmail, Outlook, SendGrid etc. — cada um documenta o seu)
 - `SMTP_USER` / `SMTP_PASS`: login da conta de e-mail + (se o provedor exigir, como iCloud/Gmail com 2FA) uma "senha de app" gerada nas configurações de segurança da conta
 - `EMAIL_FROM`: `"Nome Completo <email@dominio.com>"`
+- `EMAIL_BCC` (opcional): cópia oculta (CCO) de **todo** e-mail de candidatura, um ou mais endereços separados por vírgula. O script põe sozinho; não precisa de flag. Aparece no preview (`CCO:`) e no registro de `vagas/enviados.json`.
 
 **iCloud Mail (inclui alias e domínio próprio do iCloud+)**:
 - `SMTP_HOST=smtp.mail.me.com`, `SMTP_PORT=587`
