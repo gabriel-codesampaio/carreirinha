@@ -1,6 +1,6 @@
 ---
 name: linkedin-conectar-recrutadores
-description: Busca tech recruiters/recrutadores de tecnologia (e sinônimos — IT recruiter, talent acquisition, talent partner, headhunter TI, technical sourcer etc.) no LinkedIn e envia convites de conexão, sempre mostrando a lista de quem vai receber (com nome e headline) antes ou junto do envio, dentro do teto de config/limites.md. Use quando o pedido for pra encontrar/adicionar/conectar com recrutadores no LinkedIn.
+description: Busca tech recruiters/recrutadores de tecnologia (e sinônimos — IT recruiter, talent acquisition, talent partner, headhunter TI, technical sourcer etc.) no LinkedIn e envia convites de conexão (ou segue, quando o card só oferece "Seguir"), sempre mostrando a lista de quem vai receber (com nome e headline) antes ou junto do envio, dentro do teto de config/limites.md. Use quando o pedido for pra encontrar/adicionar/conectar com recrutadores no LinkedIn.
 ---
 
 # Conectar com Tech Recruiters no LinkedIn
@@ -58,11 +58,11 @@ Precisa de uma página logada no LinkedIn (`mcp__chrome-devtools__list_pages`). 
    ```
    (adicione outros parâmetros de filtro da própria URL do LinkedIn se o usuário pedir algo mais específico, tipo localização.)
 
-   Dica: filtre só 2º grau com `&network=%5B%22S%22%5D` (quase todos os cards vêm com "Conectar" em vez de "Seguir"/"Enviar mensagem") e pagine com `&page=2`, `&page=3`... Depois de navegar, espere ~3 s antes do snapshot — logo após o `navigate_page` a lista pode ainda não ter carregado e o Grep não acha nada.
+   Dica: filtre só 2º grau com `&network=%5B%22S%22%5D` (quase todos os cards vêm com "Conectar"; os que vêm só com "Seguir" seguem o fluxo do passo 6b) e pagine com `&page=2`, `&page=3`... Depois de navegar, espere ~3 s antes do snapshot — logo após o `navigate_page` a lista pode ainda não ter carregado e o Grep não acha nada.
 
 3. **Extrair a lista de resultados com `mcp__chrome-devtools__take_snapshot`** — capture nome, headline/cargo e o uid do link/botão "Conectar" (ex: `link "Convidar <Nome> para se conectar"`) de cada card visível. Use o snapshot direto (não `evaluate_script` com seletores CSS — o DOM do LinkedIn vem com classes ofuscadas e isso não acha nada, confirmado em testes de 2026-10-14); além disso, o passo 6 (clicar em "Conectar") só funciona com um uid vindo de um snapshot, então é melhor já partir dele aqui. Se o snapshot estourar o limite de tokens, ele é salvo num arquivo `.txt` automaticamente — use Grep pra achar os links "para se conectar" e Read em blocos.
 
-4. **Mostrar a lista** (nome + headline, e quem foi pulado pela headline, com o motivo). Com quantidade no pedido: siga direto pro envio dos escolhidos, na mesma resposta. Sem quantidade: pergunte quantos/quais ("todos da lista", "só os 3 primeiros" etc.); não assuma "todos".
+4. **Mostrar a lista** (nome + headline, marcando com "(seguir)" quem só tem o botão "Seguir", e quem foi pulado pela headline, com o motivo). Com quantidade no pedido: siga direto pro envio dos escolhidos, na mesma resposta. Sem quantidade: pergunte quantos/quais ("todos da lista", "só os 3 primeiros" etc.); não assuma "todos".
 
 5. **Decidir sobre nota**: pergunte se quer mandar uma notinha curta e personalizada (o LinkedIn permite nota em conexões, com limite de caracteres) ou enviar sem nota. Se o usuário não tiver uma nota pronta, sugira uma curta e genérica pra aprovação dele(a) antes de usar. Se `enviar_com_nota` em `config/limites.md` for `não`, envie sem nota e não pergunte, a menos que o usuário peça nota.
 
@@ -85,7 +85,13 @@ Precisa de uma página logada no LinkedIn (`mcp__chrome-devtools__list_pages`). 
 
    Quando bloquear: **pare na hora**, não tente de novo com outra ferramenta, reporte quem foi confirmado como Pendente e quem ficou sem confirmar, e avise se ficou um modal "Adicionar nota" aberto na tela (o usuário pode clicar "Enviar sem nota" manualmente).
 
-7. **Resumir ao final**: quantos convites foram enviados, pra quem, e se bateu no teto da sessão.
+6b. **Seguir quem não tem "Conectar"** (pedido do usuário em 2026-10-21): alguns recrutadores deixam no card só o botão **"+ Seguir"** (ex.: headhunters com muitos seguidores). Se a pessoa passou no filtro de headline, **siga** em vez de pular:
+   - Ache o uid no snapshot `verbose: true` com Grep por `uid=\S+ (button|link) "Seguir [^"]+"` (`-o: true`). O rótulo traz o nome da pessoa; confira antes de clicar. O texto exato ainda não foi validado: se não bater, procure o botão "Seguir" dentro do card da pessoa no snapshot.
+   - Um clique em `Seguir` (`mcp__chrome-devtools__click`) já segue, sem modal. Confirme pelo estado da página: o botão vira "Seguindo"/"Deixar de seguir".
+   - Quem já aparece como "Seguindo", pule.
+   - Seguir **não conta** no número de convites pedido (`X` da rotina), mas tem o mesmo teto por sessão (`convites_por_sessao_max`) e a mesma espera entre ações (`espera_entre_convites_seg`). As mesmas regras de bloqueio do modo automático valem aqui.
+
+7. **Resumir ao final**: quantos convites foram enviados e quantas pessoas foram seguidas, com os nomes, e se bateu no teto da sessão.
 
 ## Interface do LinkedIn em inglês
 
@@ -101,10 +107,11 @@ Os nomes de botão e os rótulos que a skill procura (`Convidar`, `Enviar sem no
 | `Pendente; clique para retirar o convite enviado a <Nome>` | `Pending, click to withdraw invitation sent to <Name>` | convite já enviado |
 | `insira o e-mail do usuário` | `enter their email` | modal que pede e-mail (pular) |
 | `Fechar` | `Dismiss` | fechar o modal |
+| `Seguir <Nome>` / `Seguindo` | `Follow <Name>` / `Following` | card só com "Seguir" (passo 6b) |
 
 ## Observações importantes
 
-- Essa skill nunca segue, mensagem ou interage além do próprio convite de conexão — isso é escopo de uma skill futura, não dessa.
+- Essa skill só convida ou segue (passo 6b). Nunca manda mensagem nem interage de outro jeito: isso é escopo de uma skill futura.
 - Se o perfil já for 1º grau (já conectado) ou já tiver convite pendente, pule e avise o usuário em vez de tentar reenviar.
 - A reconexão do navegador (MCP) pode acontecer no meio de uma sessão — se um `pageId` parar de funcionar, rode `mcp__chrome-devtools__list_pages` de novo pra pegar o novo id. **Depois de uma reconexão, sempre tire um snapshot novo antes de clicar em qualquer coisa** — um uid de um snapshot antigo não é confiável na página recarregada.
 - Trate `vagas/progresso-recrutadores.md` e `vagas/linkedin-conexoes.json` como dado sensível (contém quem o usuário está tentando se conectar) — não exponha fora do projeto.
