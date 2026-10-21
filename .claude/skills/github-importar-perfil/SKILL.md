@@ -55,7 +55,7 @@ Só leitura. Não usa navegador: a coleta é feita pela API pública do GitHub.
    - `descricao`: a descrição do repositório; se vazia, a primeira frase do README que diz o que o projeto é.
    - `stack`: linguagens com 5% ou mais + tópicos + tecnologias que o README cita explicitamente. Não deduza biblioteca que não esteja escrita.
    - `destaques`: 2 a 5 bullets com funcionalidades e decisões técnicas **que estão no README**. Nada de métricas, usuários ou resultados que o README não diga.
-   - Idioma: mantenha o do README. A `gerar-curriculo` traduz se a vaga pedir.
+   - Idioma: se o `perfil.yaml` tiver `idioma_base` (ex.: `pt-BR`), traduza fielmente para ele (nomes de tecnologias e produtos ficam como estão); senão, mantenha o do README. A `gerar-curriculo` adapta pro idioma da vaga.
 
 5. **Somar as skills técnicas**: junte linguagens (5% ou mais), tópicos e tecnologias citadas nos READMEs dos projetos que entraram, e **adicione automaticamente** as que ainda não estão em `skills.tecnicas`, com a deduplicação do documento de mescla. Não pergunte; liste as adicionadas no resumo final.
 

@@ -2,6 +2,9 @@
 # O arquivo real (curriculo/perfil.yaml) fica fora do git — veja .gitignore.
 # Copie este arquivo para perfil.yaml e preencha com dados reais.
 
+# Opcional: idioma em que este arquivo é mantido (ex.: "pt-BR"). As importações traduzem fielmente para ele.
+idioma_base: ""
+
 dados_pessoais:
   nome: ""
   email: ""
@@ -49,3 +52,14 @@ projetos:
     destaques:
       - ""
     fontes: [] # de onde veio: linkedin, github e/ou manual (ver docs/mescla-perfil.md)
+
+# Opcional: decisões suas que valem por cima das regras padrão da gerar-curriculo.
+# Exemplo: título do currículo conforme a senioridade da vaga.
+regras_alternativas: []
+#  - nome: "Título conforme a senioridade da vaga"
+#    aplica_a: ["Título do currículo (linha abaixo do nome)"]
+#    regra:
+#      - vaga: "Sênior"
+#        usar: "Desenvolvedor Front-End Sênior"
+#      - vaga: "Júnior / Pleno"
+#        usar: "Desenvolvedor Front-End"

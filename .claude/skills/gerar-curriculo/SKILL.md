@@ -22,7 +22,7 @@ O perfil é a base completa; o currículo é um recorte dela pra aquela vaga.
 
 ### 1. Carregar o perfil
 
-- Leia `curriculo/perfil.yaml`.
+- Leia `curriculo/perfil.yaml`, incluindo a seção `regras_alternativas`, se existir. Essas regras são decisões de quem usa o projeto e **valem por cima das regras padrão desta skill** (ex.: qual título usar conforme a senioridade da vaga).
 - Se não existir ou estiver vazio/placeholder: pare e sugira `linkedin-importar-perfil` e `github-importar-perfil`. Nunca gere currículo com dados fictícios.
 
 ### 2. Obter a vaga
@@ -65,7 +65,7 @@ Guarde em `aderencia` no JSON da vaga (`{ "requisito": { "status": "atende|parci
 
 ### 4. Decidir o conteúdo a partir da vaga
 
-- **Título** (linha abaixo do nome): o cargo da vaga, **se** o perfil tiver experiência equivalente (ex.: vaga "Desenvolvedor Front-end Sênior", perfil com cargos front-end sênior). Se não tiver, use um título real do perfil que seja o mais próximo.
+- **Título** (linha abaixo do nome): o cargo da vaga, **se** o perfil tiver experiência equivalente (ex.: vaga "Desenvolvedor Front-end Sênior", perfil com cargos front-end sênior). Se não tiver, use um título real do perfil que seja o mais próximo. **Se `regras_alternativas` definir o título (ou o nome de um cargo) por senioridade da vaga, siga a regra de lá** e diga na entrega (passo 8) qual regra foi aplicada.
 - **Resumo** (2-3 linhas): reescrito a partir do `resumo` do perfil, focado no que a vaga pede, com 3 a 5 `palavras_chave` atendidas. Só fatos do perfil.
 - **Experiências**: todas as relevantes, da mais recente pra mais antiga. Em cada uma, **escolha e reordene os bullets** pelos requisitos que eles comprovam (3 a 6 bullets na mais relevante, 2 a 4 nas demais). Cargos antigos e sem relação com a vaga podem sair.
   - Pode reescrever um bullet pra usar o termo da vaga quando for **o mesmo fato** (perfil "component library" → vaga "Design System"). Não pode acrescentar tecnologia, número ou resultado que o bullet não tem.
