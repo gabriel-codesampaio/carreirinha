@@ -11,7 +11,10 @@
  *     --subject "Candidatura - Dev Backend" \
  *     --body "caminho/para/corpo.txt" \
  *     --attach "curriculo/gerados/empresa-cargo-2026-10-14.pdf" \
+ *     [--attach-name "Nome_Sobrenome_Curriculo_Cargo.pdf"] \
  *     [--confirm] [--force] [--sem-assinatura]
+ *
+ * --attach-name   nome que o anexo tem pra quem recebe (o arquivo em disco não muda). Sem ele, vai o nome do arquivo.
  *
  * Cópia oculta: se EMAIL_BCC estiver no .env (um ou mais endereços separados por vírgula), todo envio
  * vai com esses endereços em CCO.
@@ -31,7 +34,7 @@
  */
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { resolve, dirname } from "node:path";
+import { resolve, dirname, basename } from "node:path";
 import "dotenv/config";
 
 function parseArgs(argv) {
@@ -241,7 +244,8 @@ async function main() {
   console.log(`Assunto:    ${args.subject}`);
   const bcc = bccConfigurado();
   console.log(`CCO:        ${bcc.length ? bcc.join(", ") : "(nenhum)"}`);
-  console.log(`Anexo:      ${attachmentPath || "(nenhum)"}`);
+  const attachmentName = args["attach-name"] || (attachmentPath ? basename(attachmentPath) : null);
+  console.log(`Anexo:      ${attachmentPath ? `${attachmentName} (${attachmentPath})` : "(nenhum)"}`);
   console.log(`Assinatura: ${corpo.assinatura || "(nenhuma)"}`);
   console.log("─────────────────────────────────────────────────");
   console.log(corpo.text);
@@ -262,7 +266,7 @@ async function main() {
     subject: args.subject,
     text: corpo.text,
     ...(corpo.html ? { html: corpo.html } : {}),
-    attachments: [...corpo.inline, ...(attachmentPath ? [{ path: attachmentPath }] : [])],
+    attachments: [...corpo.inline, ...(attachmentPath ? [{ path: attachmentPath, filename: attachmentName }] : [])],
   };
 
   const info = await transporter.sendMail(mail);

@@ -45,7 +45,7 @@ Extraia e salve em `vagas/vaga-<empresa>-<cargo>-<AAAA-MM-DD>.json` (nomes em ke
   "contratacao": "CLT|PJ|não informado", "idioma": "pt|en|es",
   "requisitos_obrigatorios": [], "requisitos_desejaveis": [], "responsabilidades": [],
   "palavras_chave": [], "como_candidatar": "", "link": "", "contato": "",
-  "aderencia": {}
+  "nome_arquivo_envio": "", "aderencia": {}
 }
 ```
 
@@ -95,9 +95,16 @@ node ".claude/skills/gerar-curriculo/scripts/html-to-pdf.mjs" "<html>" "<pdf>"
 
 O script usa o Chrome/Edge instalado (sem dependências npm). Confira o número de páginas (`grep -ac "/Type /Page$" <pdf>`) e corte bullets se passou do tamanho do passo 4.
 
+**Nome do arquivo para o recrutador.** O PDF fica salvo em `curriculo/gerados/` com o nome interno (`<empresa>-<cargo>-<AAAA-MM-DD>.pdf`), mas quem recebe vê outro nome: `<Nome>_<Sobrenome>_Curriculo_<Titulo>.pdf` (em vaga em inglês: `<Nome>_<Sobrenome>_Resume_<Title>.pdf`).
+- `<Nome>_<Sobrenome>`: o nome que aparece no topo do currículo (ex.: `Maria_Silva`).
+- `<Titulo>`: o título do passo 4, só o cargo, sem a parte depois do `|` (ex.: `Front-End_Senior`, `Tech_Lead`, `Senior_Front-End_Engineer`).
+- Sem acentos, espaços viram `_` e sem empresa nem data, porque o recrutador não precisa ver pra qual vaga você adaptou o currículo.
+
+Salve esse nome no JSON da vaga como `"nome_arquivo_envio"`. A `enviar-email` usa esse nome no anexo com `--attach-name`.
+
 ### 8. Entregar
 
-- Caminho do PDF e do JSON da vaga.
+- Caminho do PDF e do JSON da vaga, e o nome que o anexo vai ter no envio (`nome_arquivo_envio`).
 - Aderência em uma linha e os requisitos não atendidos.
 - O que foi priorizado (título, experiências e bullets que entraram, projetos, termos da vaga usados).
 - Registre (ou atualize) a vaga em `vagas/candidaturas.md`: data, empresa, cargo, aderência, caminho do PDF, como se candidatar e status (`currículo pronto`). O formato está na `rotina-linkedin`.

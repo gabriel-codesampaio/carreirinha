@@ -69,8 +69,10 @@ Se o `.env` não existir ou faltar alguma variável, o script avisa e não envia
      --to "<email-destinatario>" \
      --subject "<assunto>" \
      --body "<caminho-do-corpo.txt>" \
-     --attach "<caminho-do-pdf-em-curriculo/gerados/>"
+     --attach "<caminho-do-pdf-em-curriculo/gerados/>" \
+     --attach-name "<nome_arquivo_envio do JSON da vaga>"
    ```
+   O `--attach-name` é o nome que o recrutador vê no anexo (ex.: `Maria_Silva_Curriculo_Front-End_Senior.pdf`), definido pela `gerar-curriculo`. Se o JSON da vaga não tiver `nome_arquivo_envio`, monte o nome pela mesma regra (passo 7 da `gerar-curriculo`).
    Isso roda em **modo rascunho por padrão** — mostra o preview completo (de/para/assunto/anexo/corpo) e não envia nada.
 
 4. **Mostrar o preview ao usuário** e perguntar explicitamente se pode enviar. Só prossiga com uma confirmação afirmativa clara dele(a) (ex: "pode mandar", "sim", "confirma").
