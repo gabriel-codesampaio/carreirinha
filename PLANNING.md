@@ -20,7 +20,7 @@ Agente pessoal que conhece a carreira de quem usa o projeto, gera currículos so
 
 ### Currículo
 - [x] **`gerar-curriculo`** — junta perfil (fatos) + vaga (prioridades e linguagem). Lê vaga por texto, link (LinkedIn via MCP, outros via WebFetch) ou arquivo salvo; salva `vagas/vaga-*.json` com requisitos, palavras-chave e **aderência** (✅/🟡/❌ por requisito). Requisito não atendido nunca entra no currículo.
-- [x] Template (`template.html`, baseado no `template-original.docx`): título, resumo, Experiência, Projetos, Competências, Formação, Certificações, Idiomas. PDF via Chrome/Edge headless (`html-to-pdf.mjs`, zero dependências npm).
+- [x] Template (`template.html`, layout clássico ATS-safe): título, resumo, Experiência, Projetos, Competências, Formação, Certificações, Idiomas. PDF via Chrome/Edge headless (`html-to-pdf.mjs`, zero dependências npm).
 - [x] Skills de apoio globais: `resume-bullet-writer`, `resume-ats-optimizer`, `resume-quantifier`, `pdf`.
 
 ### Vagas
@@ -85,7 +85,6 @@ carreira-generator/
 ├── curriculo/
 │   ├── perfil.example.yaml             # schema (versionado)
 │   ├── perfil.yaml                     # carreira do usuário (fora do git)
-│   ├── template-original.docx          # referência visual (versionado)
 │   ├── historico/                      # backups do perfil e currículos antigos (fora do git)
 │   └── gerados/                        # currículos gerados (fora do git, exceto README)
 ├── vagas/                              # tudo fora do git, exceto README

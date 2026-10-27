@@ -16,3 +16,6 @@ config/assinatura*
 
 # Node
 node_modules/
+
+# Modelo de terceiro (Resume Companion), só referência local
+curriculo/template-original.docx

@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <title>Currículo</title>
 <style>
-  /* Réplica fiel do template curriculo/template-original.docx (Calibri, layout clássico ATS-safe) */
+  /* Layout clássico ATS-safe (Calibri, uma coluna) */
   @page {
     size: Letter;
-    margin: 0.9in 0.75in;
+    margin: 0.7in 0.75in;
   }
   * { box-sizing: border-box; }
   html, body {
@@ -77,6 +77,9 @@
     margin: 0 0 2pt 0;
     padding-left: 2pt;
   }
+  /* Evita cortar empresa/cargo de seus bullets na quebra de página */
+  ul.bullets li { break-inside: avoid; page-break-inside: avoid; }
+  h2.secao, .item .empresa, .item .cargo { break-after: avoid; page-break-after: avoid; }
 </style>
 </head>
 <body>

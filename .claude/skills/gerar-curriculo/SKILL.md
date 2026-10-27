@@ -5,7 +5,7 @@ description: Gera um currículo em PDF sob medida juntando duas fontes, a base d
 
 # Gerar Currículo
 
-Monta um currículo em PDF com o template do projeto (`template.html`, baseado em `curriculo/template-original.docx`) a partir de **duas fontes**:
+Monta um currículo em PDF com o template do projeto (`template.html`, layout clássico ATS-safe) a partir de **duas fontes**:
 
 | Fonte | O que dá |
 |---|---|
