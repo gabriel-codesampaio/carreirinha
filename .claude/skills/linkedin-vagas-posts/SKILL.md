@@ -5,7 +5,7 @@ description: Rola o feed do LinkedIn (scroll) e analisa post por post pra identi
 
 # Vagas nos Posts do Feed do LinkedIn
 
-Muita vaga é divulgada como post normal no feed (ex: imagem "ESTAMOS CONTRATANDO", texto "banco de talentos", etc.) e não aparece na busca da aba Vagas. Essa skill rola o feed manualmente, lendo post por post, e separa o que é vaga do que não é — como usuário faria manualmente, só que mais rápido.
+Muita vaga é divulgada como post normal no feed (ex: imagem "ESTAMOS CONTRATANDO", texto "banco de talentos", etc.) e não aparece na busca da aba Vagas. Essa skill rola o feed manualmente, lendo post por post, e separa o que é vaga do que não é — como o usuário faria manualmente, só que mais rápido.
 
 ## Modelo recomendado (custo/benefício)
 
