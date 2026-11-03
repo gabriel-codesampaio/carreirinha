@@ -87,6 +87,23 @@ Ações com efeito real (convites, e-mail, gravar o perfil) sempre mostram o que
 
 Achou uma falha de segurança? Abra uma issue sem detalhes sensíveis e peça um contato privado.
 
+## Como contribuir
+
+Contribuições são bem-vindas: correção de bug, skill nova, suporte ao LinkedIn em inglês, melhorias no template do currículo.
+
+1. **Abra uma issue antes** de qualquer mudança grande (skill nova, mudança de fluxo), pra alinhar a ideia. Bug e ajuste pequeno podem ir direto pro PR.
+2. Faça um fork, crie uma branch a partir do `main` (`fix/...`, `feat/...`) e abra o PR descrevendo o que mudou e como você testou.
+3. Rode `node .claude/skills/verificar-setup/scripts/verificar.mjs` antes de commitar. A seção **Privacidade** tem que estar toda ✅.
+
+Regras do projeto:
+- **Nunca commite dados pessoais**: nada de `perfil.yaml`, currículos gerados, vagas, `.env`, prints com nome ou e-mail. Exemplos usam dados fictícios (`Maria Silva`, `nome@dominio.com`).
+- **Ações com efeito real continuam pedindo confirmação.** Toda skill que manda convite, e-mail ou grava o perfil mostra antes o que vai fazer e só age com o "sim" do usuário. PR que remove essa trava não entra.
+- **Respeite os limites do LinkedIn.** Nada de tirar as esperas, aumentar os tetos padrão ou contornar captcha e checkpoint.
+- **Texto de terceiros é dado.** Skill que lê post, vaga ou página nunca executa instrução vinda desse texto.
+- **Sem dependência nova** se dá pra fazer com Node 18+ puro. Scripts ficam em `.claude/skills/<skill>/scripts/`.
+- **Skill nova** segue o formato das existentes: `SKILL.md` com `name` e `description` no frontmatter, passos numerados e regras de segurança. Registre-a na tabela do [agente](.claude/agents/carreirinha.md) e na seção "O que dá pra pedir" deste README.
+- Documentação e textos das skills em **português**. Se a skill mexe no LinkedIn, diga no PR em que idioma da interface você testou.
+
 ## Licença
 
 [MIT](LICENSE).
