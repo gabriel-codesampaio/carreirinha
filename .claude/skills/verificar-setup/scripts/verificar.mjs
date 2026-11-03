@@ -86,7 +86,7 @@ if (!perfil) {
     "Preencha dados_pessoais.github", "github-importar-perfil");
   if (rede && /^[A-Za-z0-9-]{1,39}$/.test(gh)) {
     try {
-      const res = await fetch(`https://api.github.com/users/${gh}`, { headers: { "User-Agent": "carrerinha" } });
+      const res = await fetch(`https://api.github.com/users/${gh}`, { headers: { "User-Agent": "carreirinha" } });
       add("Perfil", "GitHub acessível", res.ok ? "ok" : "aviso", `HTTP ${res.status}`,
         res.status === 403 ? "Limite da API: ponha GITHUB_TOKEN no .env" : "Confira o usuário", "github-importar-perfil");
     } catch {

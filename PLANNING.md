@@ -1,8 +1,8 @@
-# Carrerinha — Planejamento
+# Carreirinha — Planejamento
 
 Agente pessoal que conhece a carreira de quem usa o projeto, gera currículos sob medida e ajuda a disparar candidaturas (e-mail + LinkedIn assistido).
 
-**Arquitetura:** agent + skills nativos do Claude Code (`.claude/agents/`, `.claude/skills/`). A pessoa conversa com o `carrerinha`, que lê o `SKILL.md` certo e executa. Scripts Node (PDF, e-mail, GitHub, diagnóstico) são recursos dentro de cada skill, chamados via Bash.
+**Arquitetura:** agent + skills nativos do Claude Code (`.claude/agents/`, `.claude/skills/`). A pessoa conversa com o `carreirinha`, que lê o `SKILL.md` certo e executa. Scripts Node (PDF, e-mail, GitHub, diagnóstico) são recursos dentro de cada skill, chamados via Bash.
 **LinkedIn:** semi-automático via MCP de navegador (`mcp__chrome-devtools__*`), com a sessão do usuário. Login sempre manual; ações com efeito real só com autorização.
 **Template:** nada específico de um usuário nos arquivos versionados. Dados pessoais, preferências e histórico ficam fora do git.
 
@@ -61,9 +61,9 @@ Agente pessoal que conhece a carreira de quem usa o projeto, gera currículos so
 ## Estrutura de pastas
 
 ```
-carrerinha/
+carreirinha/
 ├── .claude/
-│   ├── agents/carrerinha.md
+│   ├── agents/carreirinha.md
 │   └── skills/
 │       ├── verificar-setup/            # SKILL.md + scripts/verificar.mjs
 │       ├── linkedin-importar-perfil/   # SKILL.md

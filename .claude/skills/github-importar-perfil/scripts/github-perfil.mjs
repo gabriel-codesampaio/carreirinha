@@ -35,7 +35,7 @@ if (!/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/.test(usuario)) {
   process.exit(1);
 }
 
-const headers = { Accept: "application/vnd.github+json", "User-Agent": "carrerinha" };
+const headers = { Accept: "application/vnd.github+json", "User-Agent": "carreirinha" };
 if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
 
 async function api(caminho) {
@@ -59,7 +59,7 @@ async function readme(repo) {
 
 async function fixados() {
   // A API REST não expõe os repositórios fixados; eles vêm do HTML público do perfil.
-  const res = await fetch(`https://github.com/${usuario}`, { headers: { "User-Agent": "carrerinha" } });
+  const res = await fetch(`https://github.com/${usuario}`, { headers: { "User-Agent": "carreirinha" } });
   if (!res.ok) return [];
   const html = await res.text();
   const re = new RegExp(`href="/${usuario}/([^"/]+)"[^>]*>\\s*<span class="repo"`, "g");

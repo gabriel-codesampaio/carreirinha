@@ -80,7 +80,7 @@ async function montarCorpo(texto, { semAssinatura = false } = {}) {
     if (/^(https?:|cid:|data:)/i.test(src)) return tag;
     const caminho = resolve(CONFIG_DIR, src);
     if (!existsSync(caminho)) return "";
-    const cid = `assinatura-${inline.length + 1}@carrerinha`;
+    const cid = `assinatura-${inline.length + 1}@carreirinha`;
     inline.push({ filename: src.split(/[\\/]/).pop(), path: caminho, cid });
     return tag.replace(`src="${src}"`, `src="cid:${cid}"`);
   });
@@ -178,14 +178,14 @@ async function testar(args) {
   }
   const destino = process.env.EMAIL_FROM.match(/<([^>]+)>/)?.[1] ?? process.env.EMAIL_FROM;
   const corpo = await montarCorpo(
-    "Se este e-mail chegou, o envio pelo carrerinha está funcionando com este remetente.",
+    "Se este e-mail chegou, o envio pelo carreirinha está funcionando com este remetente.",
     { semAssinatura: args.semAssinatura }
   );
   try {
     const info = await transporter.sendMail({
       from: process.env.EMAIL_FROM,
       to: destino,
-      subject: "Teste do carrerinha",
+      subject: "Teste do carreirinha",
       text: corpo.text,
       ...(corpo.html ? { html: corpo.html } : {}),
       attachments: corpo.inline,

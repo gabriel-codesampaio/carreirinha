@@ -1,10 +1,10 @@
-# Carrerinha
+# Carreirinha
 
 Agente pessoal de carreira pra usar dentro do Claude Code: monta sua base de carreira a partir do LinkedIn e do GitHub, gera currículos sob medida pra cada vaga, busca vagas no LinkedIn, conecta você com recrutadores de tecnologia e prepara candidaturas por e-mail.
 
 É um template pensado pra qualquer pessoa adotar na própria busca de emprego. Nada aqui é específico de um usuário: a carreira fica em `curriculo/perfil.yaml`, as preferências em `config/`, as credenciais em `.env` e o histórico em `vagas/`, tudo fora do git.
 
-Veja [PLANNING.md](PLANNING.md) pra arquitetura, status e próximos passos. O agente está em `.claude/agents/carrerinha.md` e as capacidades em `.claude/skills/`.
+Veja [PLANNING.md](PLANNING.md) pra arquitetura, status e próximos passos. O agente está em `.claude/agents/carreirinha.md` e as capacidades em `.claude/skills/`.
 
 **Pra quem é:** profissionais de tecnologia (dev, QA, dados, DevOps, produto) buscando vaga no Brasil ou remoto. Os termos de busca de recrutadores são de tech e o filtro de vagas é configurável por stack e cargo.
 
@@ -57,7 +57,7 @@ npx skills add anthropics/skills --skill pdf -g -a claude-code
 
 ## Como usar
 
-Abra a pasta do projeto no Claude Code e peça em português, do jeito que falaria com alguém. O Claude encaminha pro agente `carrerinha`, que lê a skill certa e executa. Pra conversar só com ele desde o início: `claude --agent carrerinha`.
+Abra a pasta do projeto no Claude Code e peça em português, do jeito que falaria com alguém. O Claude encaminha pro agente `carreirinha`, que lê a skill certa e executa. Pra conversar só com ele desde o início: `claude --agent carreirinha`.
 
 ## O que dá pra pedir
 
