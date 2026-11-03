@@ -27,12 +27,18 @@ A rotina **não pergunta nada no início**. Tudo vem dos arquivos:
 |---|---|
 | `config/limites.md` (ou `.example.md`) | `convites_padrao_rotina`, `convites_por_dia_max`, `rodadas_feed_max`, `posts_max_por_execucao`, `aderencia_minima`, `confirmar_emails` |
 | `config/filtro-vagas.md` (ou `.example.md`) | Que vagas interessam |
-| `curriculo/perfil.yaml` | A base do currículo. Sem ele, pare e sugira as importações. |
+| `curriculo/perfil.yaml` | A base do currículo. Sem ele, pare e sugira as importações. Só leia quando houver vaga dentro do filtro (é o maior arquivo da rotina). |
 | `vagas/rotina-linkedin.md` | Convites já enviados hoje e as conexões da última rotina |
 | `vagas/posts-vistos.json` | Posts já lidos, que não são reavaliados |
 | `vagas/candidaturas.md` | Vagas já tratadas, pra não gerar currículo duas vezes pra mesma vaga |
 
 Se o usuário disser algo na chamada (ex.: "com 20 recrutadores", "sem convites hoje"), vale por cima dos arquivos.
+
+**Economia de tokens:** os arquivos de `vagas/` só crescem. Não abra nenhum inteiro:
+- `rotina-linkedin.md`: `grep "^| <hoje>" vagas/rotina-linkedin.md` pros convites de hoje e `tail -1` pras conexões da última rotina.
+- `posts-vistos.json`: só pelo `vistos.mjs` da `linkedin-vagas-posts`, nunca com Read.
+- `candidaturas.md`: `grep -i "<empresa>"` na hora de checar uma vaga.
+- `progresso-recrutadores.md`: `grep "🟡"` pro termo em uso e `grep -c "<termo>"` pra saber se um termo já foi usado.
 
 ## Passo a passo
 

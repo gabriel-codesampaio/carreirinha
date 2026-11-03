@@ -48,7 +48,7 @@ Precisa de uma página logada no LinkedIn (`mcp__chrome-devtools__list_pages`). 
    17. `people partner tech` / `HRBP tecnologia` (menos focado em vaga, use por último)
    18. `frontend recruiter` / `recrutador front-end` (poucos resultados; troque pelo nicho de quem usa o projeto, conforme `config/filtro-vagas.md`)
 
-   **Progresso de cada termo** fica em `vagas/progresso-recrutadores.md` (fora do git, é dado de quem usa o projeto). Leia esse arquivo no início: comece pelo termo 🟡 em uso, na página indicada; se não houver, pelo primeiro termo da lista que não está lá. Se o arquivo não existir, crie com o cabeçalho `| Status | Termo | Última página | Atualizado em | Observação |`. **No fim da sessão, atualize** a linha de cada termo usado (status ⛔ esgotado / 🟡 em uso, última página, data e quem sobrou na última página).
+   **Progresso de cada termo** fica em `vagas/progresso-recrutadores.md` (fora do git, é dado de quem usa o projeto). O arquivo só cresce: não abra inteiro, use `grep "🟡"` pro termo em uso e `grep -c "<termo>"` pra ver se um termo já foi usado. No início: comece pelo termo 🟡 em uso, na página indicada; se não houver, pelo primeiro termo da lista que não está lá. Se o arquivo não existir, crie com o cabeçalho `| Status | Termo | Última página | Atualizado em | Observação |`. **No fim da sessão, atualize** a linha de cada termo usado (status ⛔ esgotado / 🟡 em uso, última página, data e quem sobrou na última página).
 
    **Filtre pela headline antes de convidar.** Termos amplos ("talent acquisition", "recruiter", "headhunter") trazem gente fora de tech. Pule quem a headline indica ser psicólogo(a) clínico(a), gestão de projetos, comercial/vendas, "recrutadora virtual 3D" e afins, ou RH generalista sem menção a tecnologia/TI.
 
@@ -60,7 +60,17 @@ Precisa de uma página logada no LinkedIn (`mcp__chrome-devtools__list_pages`). 
 
    Dica: filtre só 2º grau com `&network=%5B%22S%22%5D` (quase todos os cards vêm com "Conectar"; os que vêm só com "Seguir" seguem o fluxo do passo 6b) e pagine com `&page=2`, `&page=3`... Depois de navegar, espere ~3 s antes do snapshot — logo após o `navigate_page` a lista pode ainda não ter carregado e o Grep não acha nada.
 
-3. **Extrair a lista de resultados com `mcp__chrome-devtools__take_snapshot`** — capture nome, headline/cargo e o uid do link/botão "Conectar" (ex: `link "Convidar <Nome> para se conectar"`) de cada card visível. Use o snapshot direto (não `evaluate_script` com seletores CSS — o DOM do LinkedIn vem com classes ofuscadas e isso não acha nada, confirmado em testes de 2026-10-14); além disso, o passo 6 (clicar em "Conectar") só funciona com um uid vindo de um snapshot, então é melhor já partir dele aqui. Se o snapshot estourar o limite de tokens, ele é salvo num arquivo `.txt` automaticamente — use Grep pra achar os links "para se conectar" e Read em blocos.
+3. **Extrair a lista (nome, headline, status) com um `evaluate_script` só de leitura** (validado em 2026-11-03). Ele parte do `aria-label` dos links, não de classe CSS (que é ofuscada), e custa uma fração de um snapshot:
+   ```js
+   async () => {
+     await new Promise(r => setTimeout(r, 3000));
+     return [...document.querySelectorAll('main a, main button')]
+       .filter(a => /^(Convidar|Pendente|Seguir )/.test(a.getAttribute('aria-label') || ''))
+       .map(a => { let el = a; for (let k = 0; k < 10 && !/•/.test(el.innerText); k++) el = el.parentElement;
+         return (a.getAttribute('aria-label').startsWith('Pendente') ? '[PENDENTE] ' : '') + el.innerText.replace(/\s+/g, ' ').slice(0, 170); });
+   }
+   ```
+   Os uids pra clicar vêm depois, no passo 6, de um snapshot `verbose: true` **salvo em arquivo** e lido só por Grep. Nunca leia um snapshot da busca inteiro no contexto.
 
 4. **Mostrar a lista** (nome + headline, marcando com "(seguir)" quem só tem o botão "Seguir", e quem foi pulado pela headline, com o motivo). Com quantidade no pedido: siga direto pro envio dos escolhidos, na mesma resposta. Sem quantidade: pergunte quantos/quais ("todos da lista", "só os 3 primeiros" etc.); não assuma "todos".
 
@@ -74,7 +84,8 @@ Precisa de uma página logada no LinkedIn (`mcp__chrome-devtools__list_pages`). 
    - **Modal pedindo e-mail** ("Para confirmar que vocês se conhecem, insira o e-mail do usuário", com "Enviar sem nota" desabilitado): a pessoa só aceita convite de quem tem o e-mail dela. Feche no `button "Fechar"` e pule. Isso não conta como envio (visto em 2026-10-19).
    - Se o clique em "Conectar" der `did not become interactive`, normalmente é porque o modal anterior ainda estava fechando. Espere e tente de novo uma vez; às vezes o modal abre mesmo assim, então tire o snapshot antes de clicar de novo.
    - **Confirme o envio pelo estado da página, não pelo "Successfully clicked".** Depois de alguns envios, rode um `evaluate_script` só de leitura listando `aria-label` dos links `main a` que começam com `Convidar`/`Pendente`: quem foi enviado vira `Pendente; clique para retirar o convite enviado a <Nome>`.
-   - Aguarde alguns segundos antes do próximo convite (não enviar em rajada).
+   - Aguarde alguns segundos antes do próximo convite (não enviar em rajada). Espere **pelo menos 3 s depois do "Enviar sem nota"** antes de clicar no próximo "Conectar": com menos que isso o modal anterior ainda está fechando e o clique se perde (visto em 2026-11-03).
+   - Snapshot do modal: sempre salvo em arquivo (`filePath`) e lido só com o Grep acima. Cada convite custa ~200 tokens assim, contra milhares lendo o snapshot.
    - **Nunca clique "Enviar sem nota" via `evaluate_script`/JS** pra ganhar velocidade ou fugir de bloqueio — o clique tem que ser `mcp__chrome-devtools__click` com uid de snapshot.
    - Registro em `vagas/linkedin-conexoes.json` é opcional: o status "Pendente" do próprio LinkedIn já é a fonte de verdade contra duplicidade. Registre só se o usuário pedir.
 

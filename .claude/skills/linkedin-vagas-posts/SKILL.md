@@ -36,24 +36,31 @@ Mesma coisa da `linkedin-buscar-vagas`: precisa de uma página logada no LinkedI
    Independente do modo escolhido, aplique um **teto de segurança** de `posts_max_por_execucao` posts analisados (ou `scrolls_max_por_execucao` scrolls) nessa execução — se bater nesse teto sem atingir o número de vagas pedido, pare, reporte o que achou até ali e pergunte se o usuário quer continuar numa nova rodada (não fique rolando pra sempre atrás de vagas que talvez não existam no feed agora).
 
 4. **Ler os posts** (validado em 2026-10-19):
-   a. **Texto, por script (só leitura)**: cada post começa num `h2` com o texto "Publicação no feed" (interface em inglês: "Feed post"; o script já aceita os dois). Suba do `h2` até o contêiner que tem o texto do post e leia o `innerText`. Guarde em `window.__seen` quantos já leu, pra cada chamada devolver só os novos:
+   a. **Rolar e ler numa chamada só, salvando em arquivo** (validado em 2026-11-03). Cada post começa num `h2` "Publicação no feed" ("Feed post" em inglês). O script rola o contêiner do feed até juntar `posts_max_por_execucao` posts (ou `scrolls_max_por_execucao` rolagens) e devolve o texto de todos. Rode com `evaluate_script` passando **`filePath`** (ex.: `<scratchpad>/feed.json`), pra a resposta ir pro arquivo e não pro contexto:
       ```js
       async () => {
-        const hs = [...document.querySelectorAll('h2')].filter(h => /Publicação no feed|Feed post/i.test(h.innerText));
-        window.__seen = window.__seen || 0;
-        const out = hs.slice(window.__seen).map((h, i) => {
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+        const posts = () => [...document.querySelectorAll('h2')].filter(h => /Publicação no feed|Feed post/i.test(h.innerText));
+        const sc = document.getElementById('workspace') || [...document.querySelectorAll('*')].sort((a, b) => (b.scrollHeight - b.clientHeight) - (a.scrollHeight - a.clientHeight))[0];
+        for (let s = 0; s < 15 && posts().length < 80; s++) { sc.scrollTop = sc.scrollHeight; await sleep(1800 + Math.random() * 800); }
+        return posts().map((h, i) => {
           let el = h.parentElement;
           for (let k = 0; k < 8 && el.innerText.length < 200; k++) el = el.parentElement;
-          const link = el.querySelector('a[href*="/feed/update/"]')?.href ?? null;
-          return { i: window.__seen + i, link, texto: el.innerText.replace(/s+/g, ' ').slice(0, 700) };
+          const link = el.querySelector('a[href*="/feed/update/"]')?.href?.split('?')[0] ?? null;
+          return { i, link, texto: el.innerText.replace(/\s+/g, ' ').slice(0, 900) };
         });
-        window.__seen = hs.length;
-        return out;
       }
       ```
-      Seletores de classe CSS (tipo `.feed-shared-update-v2`) **não funcionam**: o DOM do LinkedIn é ofuscado.
-   b. **Pular posts já vistos**: leia `vagas/posts-vistos.json` (lista de `{ id, data, vaga }`; crie `[]` se não existir). O `id` é o `link` do post, sem parâmetros (`?...`); sem link, use autor + os primeiros 120 caracteres do texto. Post com `id` na lista não é reclassificado. Acrescente cada post novo ao terminar a execução, com `vaga: true/false`. Isso evita repetir vagas quando o feed recicla posts ou quando a rotina recarrega o feed.
-   c. **Classifique você mesmo** cada post novo: é vaga ou não, pelos sinais "vaga", "contratando", "estamos buscando", "oportunidade", "envie seu currículo", "banco de talentos", cargo + modelo de trabalho, e-mail ou link de candidatura no texto.
+      (Troque `15` e `80` pelos tetos de `config/limites.md`.) Seletores de classe CSS (tipo `.feed-shared-update-v2`) **não funcionam**: o DOM do LinkedIn é ofuscado.
+   b. **Pular posts já vistos, sem abrir `vagas/posts-vistos.json`** (o arquivo passa de 200 KB; ler ele custa dezenas de milhares de tokens). Rode:
+      ```
+      node .claude/skills/linkedin-vagas-posts/scripts/vistos.mjs filtrar <scratchpad>/feed.json <scratchpad>/novos.json
+      ```
+      Ele imprime só os posts novos: prévia curta pra cada um e o texto inteiro dos que têm cara de vaga (`[VAGA?]`). O `id` de cada post é o `link` sem parâmetros; sem link, os primeiros 120 caracteres do texto. Ao terminar a execução, registre os novos (com os índices `i` dos que eram vaga):
+      ```
+      node .claude/skills/linkedin-vagas-posts/scripts/vistos.mjs marcar <scratchpad>/novos.json <AAAA-MM-DD> 4,6,10
+      ```
+   c. **Classifique você mesmo** cada post novo pela saída do `filtrar` (a marca `[VAGA?]` é só uma ajuda; confira também as prévias sem ela): é vaga ou não, pelos sinais "vaga", "contratando", "estamos buscando", "oportunidade", "envie seu currículo", "banco de talentos", cargo + modelo de trabalho, e-mail ou link de candidatura no texto.
    d. **Snapshot só pra clicar** (curtir, "… mais"): `take_snapshot` salvo em arquivo + Grep pelo trecho do post. O `uid` de clique só vem do snapshot.
    e. **Post de vaga cortado** ("… mais" e o texto para no meio): clique no "mais" desse post ou abra o `link` do post numa aba nova e leia o texto inteiro. Se o post tiver link de vaga (`lnkd.in/...`, Gupy, Greenhouse etc.), guarde o link: quem vai gerar currículo lê a vaga completa por ele.
 
@@ -66,13 +73,9 @@ Mesma coisa da `linkedin-buscar-vagas`: precisa de uma página logada no LinkedI
    - **Cuidado com falso positivo**: a sigla "PJ" pode aparecer no texto sem ser sobre o regime de contratação — ex: um post da PicPay mencionava "time de Aceitação **PJ**", que é o nome de um time/segmento de clientes pessoa jurídica, não o contrato da vaga. Só conte como sinal de contratação se "CLT"/"PJ" aparecer colado a uma palavra de contrato/regime/modelo (como nos rótulos acima) — não conte uma ocorrência solta de "PJ" em outro contexto (nome de time, produto, público-alvo etc.).
    - Se o post não disser nada sobre isso, **não abra o link externo de aplicação só pra checar** (isso multiplicaria a navegação e deixaria a varredura bem mais lenta) — registre o campo como `"não informado no post"`. Se o usuário pedir detalhes de uma vaga específica depois, aí sim vale abrir o link de candidatura e procurar CLT/PJ na página de destino.
 
-6. **Rolar pra carregar mais posts**: o feed **não rola pelo `window`/`body`** — é um container interno. Ache-o e role ele direto via `mcp__chrome-devtools__evaluate_script`:
-   ```js
-   () => { const el = document.getElementById('workspace'); el.scrollTop = el.scrollHeight; return { scrollTop: el.scrollTop, scrollHeight: el.scrollHeight }; }
-   ```
-   Se `#workspace` não existir (LinkedIn muda o DOM com frequência), ache o container certo rodando um script que percorre todos os elementos procurando o maior `scrollHeight - clientHeight` (veja o padrão usado em 2026-10-14, disponível no histórico desta conversa/commits). Dê um pequeno delay (`await new Promise(r => setTimeout(r, 1500))`) depois de rolar pra deixar o LinkedIn carregar mais posts antes do próximo `take_snapshot` — os posts já lidos continuam no DOM (não precisa reprocessar, só pegar os headings novos que apareceram depois do último processado).
+6. **Rolagem**: o feed não rola pelo `window`/`body`, e sim por um contêiner interno (`#workspace`, ou o elemento com maior `scrollHeight - clientHeight`). O script do passo 4a já faz isso.
 
-7. **Repita os passos 4-6** até atingir o critério de parada combinado no passo 3 (número de vagas dentro do filtro, quantidade de posts, ou tempo), bater no teto de segurança, ou o usuário mandar parar.
+7. **Critério de parada**: com meta de N vagas, se a primeira leitura não bastar, role de novo e rode o `filtrar` outra vez (os já registrados saem sozinhos). Pare ao atingir o critério do passo 3, o teto de segurança ou quando o usuário mandar.
 
 8. **Ao terminar**: mostre ao usuário primeiro a lista das vagas **dentro do filtro**, já com o tipo de contratação de cada uma (CLT, PJ, ou "não informado no post") — essas são o resultado principal (se o critério era "ache N vagas", confirme se bateu a meta ou parou antes por causa do teto de segurança). Depois um resumo curto de quantas ficaram **fora do filtro** (sem detalhar todas, só a contagem e talvez 1-2 exemplos, a menos que ele(a) peça a lista completa). Informe também quantos posts foram olhados no total. Salve tudo em `vagas/linkedin-posts-<AAAA-MM-DD>.json`, incluindo o filtro usado, o critério de parada, o campo `tipoContratacao` e um campo indicando se cada vaga ficou dentro ou fora do filtro (ver exemplo de estrutura num arquivo já gerado nessa pasta).
 
