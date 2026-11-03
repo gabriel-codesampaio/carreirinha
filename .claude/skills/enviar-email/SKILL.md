@@ -36,6 +36,7 @@ Se o `.env` não existir ou faltar alguma variável, o script avisa e não envia
 ## Passo a passo
 
 1. **Reunir os dados da vaga**: destinatário (e-mail do recrutador/RH), nome da vaga/empresa, e se já existe um currículo gerado pra essa vaga em `curriculo/gerados/` (se não existir, use a skill `gerar-curriculo` primeiro). A `gerar-curriculo` salva a vaga em `vagas/vaga-<empresa>-<cargo>-<data>.json`, com `contato`, `como_candidatar` e a `aderencia`: use esse arquivo em vez de perguntar de novo.
+   **Trava:** se a empresa da vaga (ou o cliente final, quando é consultoria) está em "Empresas que ficam fora" de `config/filtro-vagas.md` (empresas/clientes do `perfil.yaml` + lista de bloqueadas), não envie: avise o usuário e pare.
 
 2. **Redigir o corpo do e-mail**, no idioma da vaga, **sempre ligando o que a vaga pede ao que o usuário já fez**. Nunca uma lista solta de tecnologias. Estrutura:
    1. **Saudação** com o primeiro nome de quem divulgou a vaga, se souber ("Olá, Mariana, tudo bem?").

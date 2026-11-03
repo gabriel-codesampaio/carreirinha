@@ -29,3 +29,9 @@ Vaga com uma destas como stack principal entra, mesmo que o cargo não diga "fro
 
 ## Contratação
 - Entram: CLT, PJ
+
+## Empresas que ficam fora
+Vaga de empresa que já está no currículo nunca entra: toda `empresa` de `experiencias` em `curriculo/perfil.yaml`, e os clientes citados nessas experiências (ex.: sub-bloco "Cliente:"). Compare pelo nome, sem ligar pra caixa, acento ou sufixo (S.A., Ltda, Group). Vale também quando a empresa contrata por consultoria.
+
+Outras empresas bloqueadas (uma por linha):
+- 
