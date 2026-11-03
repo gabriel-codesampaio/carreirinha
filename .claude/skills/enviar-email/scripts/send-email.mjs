@@ -34,7 +34,7 @@
  */
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { resolve, dirname, basename } from "node:path";
+import { resolve, dirname, basename, sep } from "node:path";
 import "dotenv/config";
 
 function parseArgs(argv) {
@@ -80,7 +80,7 @@ async function montarCorpo(texto, { semAssinatura = false } = {}) {
     if (/^(https?:|cid:|data:)/i.test(src)) return tag;
     const caminho = resolve(CONFIG_DIR, src);
     if (!existsSync(caminho)) return "";
-    const cid = `assinatura-${inline.length + 1}@carreira-generator`;
+    const cid = `assinatura-${inline.length + 1}@carrerinha`;
     inline.push({ filename: src.split(/[\\/]/).pop(), path: caminho, cid });
     return tag.replace(`src="${src}"`, `src="cid:${cid}"`);
   });
@@ -178,14 +178,14 @@ async function testar(args) {
   }
   const destino = process.env.EMAIL_FROM.match(/<([^>]+)>/)?.[1] ?? process.env.EMAIL_FROM;
   const corpo = await montarCorpo(
-    "Se este e-mail chegou, o envio pelo carreira-generator está funcionando com este remetente.",
+    "Se este e-mail chegou, o envio pelo carrerinha está funcionando com este remetente.",
     { semAssinatura: args.semAssinatura }
   );
   try {
     const info = await transporter.sendMail({
       from: process.env.EMAIL_FROM,
       to: destino,
-      subject: "Teste do carreira-generator",
+      subject: "Teste do carrerinha",
       text: corpo.text,
       ...(corpo.html ? { html: corpo.html } : {}),
       attachments: corpo.inline,
@@ -219,6 +219,12 @@ async function main() {
   let attachmentPath = null;
   if (args.attach) {
     attachmentPath = resolve(args.attach);
+    // Só currículo gerado: impede que um texto de vaga/post convença o agente a anexar .env ou o perfil.
+    const pastaGerados = resolve("curriculo/gerados") + sep;
+    if (!attachmentPath.startsWith(pastaGerados) || !/\.pdf$/i.test(attachmentPath)) {
+      console.error(`Anexo recusado: só PDFs de curriculo/gerados/ podem ser anexados (${attachmentPath}).`);
+      process.exit(1);
+    }
     if (!existsSync(attachmentPath)) {
       console.error(`Anexo não encontrado: ${attachmentPath}`);
       process.exit(1);

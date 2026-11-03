@@ -1,5 +1,5 @@
 {
-  "name": "carreira-generator",
+  "name": "carrerinha",
   "version": "1.0.0",
   "private": true,
   "description": "Agente pessoal de carreira — geração de currículo em PDF, busca de vagas e candidaturas por e-mail.",
@@ -7,6 +7,6 @@
   "type": "module",
   "dependencies": {
     "dotenv": "^16.4.5",
-    "nodemailer": "^10.1.1"
+    "nodemailer": "^10.3.1"
   }
 }

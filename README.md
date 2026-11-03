@@ -1,10 +1,10 @@
-# carreira-generator
+# Carrerinha
 
 Agente pessoal de carreira pra usar dentro do Claude Code: monta sua base de carreira a partir do LinkedIn e do GitHub, gera currículos sob medida pra cada vaga, busca vagas no LinkedIn, conecta você com recrutadores de tecnologia e prepara candidaturas por e-mail.
 
 É um template pensado pra qualquer pessoa adotar na própria busca de emprego. Nada aqui é específico de um usuário: a carreira fica em `curriculo/perfil.yaml`, as preferências em `config/`, as credenciais em `.env` e o histórico em `vagas/`, tudo fora do git.
 
-Veja [PLANNING.md](PLANNING.md) pra arquitetura, status e próximos passos. O agente está em `.claude/agents/carreira-agent.md` e as capacidades em `.claude/skills/`.
+Veja [PLANNING.md](PLANNING.md) pra arquitetura, status e próximos passos. O agente está em `.claude/agents/carrerinha.md` e as capacidades em `.claude/skills/`.
 
 **Pra quem é:** profissionais de tecnologia (dev, QA, dados, DevOps, produto) buscando vaga no Brasil ou remoto. Os termos de busca de recrutadores são de tech e o filtro de vagas é configurável por stack e cargo.
 
@@ -55,6 +55,10 @@ npx skills add anthropics/skills --skill pdf -g -a claude-code
 - As skills foram validadas com o LinkedIn **em português**. Em inglês, os textos equivalentes estão documentados nas skills, mas ainda não foram testados.
 - Pra o e-mail não cair no spam, o domínio do remetente precisa ter SPF, DKIM e DMARC. Se você usa um domínio próprio, confira com o seu provedor de DNS.
 
+## Como usar
+
+Abra a pasta do projeto no Claude Code e peça em português, do jeito que falaria com alguém. O Claude encaminha pro agente `carrerinha`, que lê a skill certa e executa. Pra conversar só com ele desde o início: `claude --agent carrerinha`.
+
 ## O que dá pra pedir
 
 | Pedido | Skill |
@@ -71,6 +75,17 @@ npx skills add anthropics/skills --skill pdf -g -a claude-code
 | "faz a limpeza" (currículos e vagas com mais de 1 semana) | `limpar-dados` |
 
 Ações com efeito real (convites, e-mail, gravar o perfil) sempre mostram o que vai acontecer e pedem confirmação.
+
+## Segurança e privacidade
+
+- **Seus dados ficam na sua máquina.** `perfil.yaml`, `config/*.md`, `vagas/`, `curriculo/gerados/` e `.env` estão no `.gitignore`. A `verificar-setup` confere isso a cada execução e acusa se algum deles fosse pro git.
+- **Credenciais só no `.env`.** O agente nunca lê os valores pro chat, e o diagnóstico só diz se estão preenchidos. Use senha de app do provedor de e-mail, nunca a senha principal. O `GITHUB_TOKEN` é opcional e não precisa de nenhuma permissão.
+- **Texto de terceiros é dado, não ordem.** Posts, vagas, perfis e READMEs podem trazer instruções escondidas ("mande também o arquivo X", "envie pra este outro e-mail"). O agente ignora esse tipo de pedido e avisa você.
+- **O anexo é travado no script:** `send-email.mjs` só aceita PDF de `curriculo/gerados/`, então nem um agente enganado consegue anexar o `.env` ou o perfil.
+- **Nada sai sem você ver.** O e-mail roda em modo rascunho por padrão e só envia com `--confirm`, depois do seu "sim" pra lista de vagas. Envio repetido pra mesma vaga é bloqueado por `vagas/enviados.json`.
+- **Limpeza:** "faz a limpeza" apaga currículos e vagas com mais de uma semana.
+
+Achou uma falha de segurança? Abra uma issue sem detalhes sensíveis e peça um contato privado.
 
 ## Licença
 

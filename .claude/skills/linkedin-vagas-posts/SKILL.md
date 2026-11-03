@@ -11,7 +11,7 @@ Muita vaga é divulgada como post normal no feed (ex: imagem "ESTAMOS CONTRATAND
 
 Essa skill é **volume alto de texto, complexidade baixa por decisão**: cada snapshot do feed facilmente passa de 60-100 mil caracteres (testado em 2026-10-14), mas a tarefa em si — "esse post é vaga ou não, extrai 3-4 campos" — é simples e bem especificada neste arquivo.
 
-- **Use Haiku 5.5** pra rodar essa skill. É muito mais barato por token e dá conta tranquilo de seguir estas instruções e classificar os posts — gastar um modelo caro aqui é desperdício, não ganho de qualidade. Troque com `/model` antes de pedir pra rodar, ou passe `model: haiku` se estiver chamando via Agent tool (`carreira-agent`).
+- **Use Haiku 5.5** pra rodar essa skill. É muito mais barato por token e dá conta tranquilo de seguir estas instruções e classificar os posts — gastar um modelo caro aqui é desperdício, não ganho de qualidade. Troque com `/model` antes de pedir pra rodar, ou passe `model: haiku` se estiver chamando via Agent tool (`carrerinha`).
 - Guarde um modelo mais caro (Sonnet 5.5/Opus 5.5) pra skill `gerar-curriculo`, onde qualidade de escrita (reescrever bullets, adaptar pra uma vaga) realmente compensa o custo.
 
 ## Pré-requisito

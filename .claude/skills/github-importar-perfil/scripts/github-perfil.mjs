@@ -29,8 +29,13 @@ if (!usuario) {
   console.error("Uso: node github-perfil.mjs <usuario> [--detalhar 12] [--out arquivo.json]");
   process.exit(1);
 }
+// Vai pra URL e pra RegExp: só o formato de login do GitHub.
+if (!/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/.test(usuario)) {
+  console.error(`Usuário do GitHub inválido: ${usuario}`);
+  process.exit(1);
+}
 
-const headers = { Accept: "application/vnd.github+json", "User-Agent": "carreira-generator" };
+const headers = { Accept: "application/vnd.github+json", "User-Agent": "carrerinha" };
 if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
 
 async function api(caminho) {
@@ -54,10 +59,10 @@ async function readme(repo) {
 
 async function fixados() {
   // A API REST não expõe os repositórios fixados; eles vêm do HTML público do perfil.
-  const res = await fetch(`https://github.com/${usuario}`, { headers: { "User-Agent": "carreira-generator" } });
+  const res = await fetch(`https://github.com/${usuario}`, { headers: { "User-Agent": "carrerinha" } });
   if (!res.ok) return [];
   const html = await res.text();
-  const re = new RegExp(`href="/${usuario}/([^"/]+)"[^>]*>\s*<span class="repo"`, "g");
+  const re = new RegExp(`href="/${usuario}/([^"/]+)"[^>]*>\\s*<span class="repo"`, "g");
   return [...new Set([...html.matchAll(re)].map((m) => m[1]))];
 }
 

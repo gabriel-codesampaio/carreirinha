@@ -82,7 +82,6 @@ async function main() {
     "--no-margins",
     `--print-to-pdf=${outputPath}`,
     "--print-to-pdf-no-header",
-    "--no-sandbox",
     fileUrl,
   ];
 
