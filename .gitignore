@@ -1,5 +1,6 @@
 # Dados pessoais (PII) — nunca versionar
-curriculo/perfil.yaml
+curriculo/perfil*.yaml
+!curriculo/perfil.example.yaml
 curriculo/historico/
 curriculo/gerados/*
 !curriculo/gerados/README.md

@@ -27,6 +27,7 @@ Só leitura. Não usa navegador: a coleta é feita pela API pública do GitHub.
    node .claude/skills/github-importar-perfil/scripts/github-perfil.mjs <usuario> --out <scratchpad>/github-perfil.json
    ```
    - Traz: bio, site, local, README do perfil, todos os repositórios próprios (sem forks, sem arquivados), com os **fixados primeiro**. Os 12 primeiros vêm com linguagens (%) e README (até 3.000 caracteres). Use `--detalhar N` pra mudar esse número.
+   - **Confira `avisos` no JSON** e mostre ao usuário. Repositório citado ali **não** conta como "sem README": deixe na lista pra confirmar. Se os fixados não foram lidos, avise que a ordem pode estar errada.
    - Sem login, a API permite 60 requisições/hora (o padrão gasta ~27). Se der erro de limite, peça pro usuário pôr um `GITHUB_TOKEN` (token sem permissões, só leitura pública) no `.env`.
 
 3. **Escolher quais repositórios viram projeto.** Entram por padrão:

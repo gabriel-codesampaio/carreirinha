@@ -3,7 +3,7 @@
  * Diagnóstico local do projeto: confere se tem o que cada skill precisa pra rodar.
  * Só leitura. Nunca imprime valores de segredos (.env), só se estão preenchidos.
  *
- * Uso (na raiz do projeto):
+ * Uso:
  *   node .claude/skills/verificar-setup/scripts/verificar.mjs [--rede] [--json]
  *
  * --rede  também testa se o usuário do GitHub do perfil.yaml existe (API pública)
@@ -15,6 +15,11 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+// Todos os caminhos abaixo são relativos à raiz, de onde quer que o script seja chamado.
+process.chdir(fileURLToPath(new URL("../../../../", import.meta.url)));
+
 // dotenv é opcional: o diagnóstico precisa rodar mesmo antes do npm install, pra dizer que ele falta.
 try { await import("dotenv/config"); } catch {}
 
@@ -28,8 +33,8 @@ const ler = (p) => (existsSync(p) ? readFileSync(p, "utf8") : null);
 
 // ---------- Ambiente ----------
 const nodeMaior = Number(process.versions.node.split(".")[0]);
-add("Ambiente", "Node.js", nodeMaior >= 18 ? "ok" : "erro", `v${process.versions.node}`,
-  "Instale Node 18 ou mais novo", "todas as skills com script");
+add("Ambiente", "Node.js", nodeMaior >= 20 ? "ok" : "erro", `v${process.versions.node}`,
+  "Instale Node 20 ou mais novo", "todas as skills com script");
 
 const pkg = JSON.parse(ler("package.json") ?? "{}");
 const faltaDep = Object.keys(pkg.dependencies ?? {}).filter((d) => !existsSync(join("node_modules", d)));
@@ -62,12 +67,17 @@ if (!perfil) {
   add("Perfil", "curriculo/perfil.yaml", "erro", "não existe",
     'Peça "importa meu perfil do LinkedIn" (linkedin-importar-perfil)', "gerar-curriculo, enviar-email");
 } else {
-  const campo = (k) => (perfil.match(new RegExp(`^\\s*${k}:\\s*"([^"]*)"`, "m")) ?? [])[1] ?? "";
-  const conta = (texto, re) => (texto.match(re) ?? []).length;
-  const exp = conta(perfil, /^\s*- empresa:\s*"[^"]+"/gm);
-  const proj = conta(perfil.split(/^projetos:/m)[1] ?? "", /^\s*- nome:\s*"[^"]+"/gm);
+  // shortcut: regex lê o YAML comum (com ou sem aspas, lista em blocos ou inline), YAML avançado escapa; o projeto evita dependência de parser.
+  const limpa = (v = "") => v.replace(/(^|\s+)#.*$/, "").trim().replace(/^(["'])(.*)\1$/, "$2").trim();
+  const campo = (k) => limpa((perfil.match(new RegExp(`^[ \\t]*${k}:[ \\t]*(.*)$`, "m")) ?? [])[1]);
+  const conta = (texto, re) => [...texto.matchAll(re)].filter((m) => limpa(m[1])).length;
+  const exp = conta(perfil, /^\s*- empresa:[ \t]*(.*)$/gm);
+  const proj = conta(perfil.split(/^projetos:/m)[1] ?? "", /^\s*- nome:[ \t]*(.*)$/gm);
   const blocoTecnicas = (perfil.split(/^\s*tecnicas:/m)[1] ?? "").split(/^\s*comportamentais:/m)[0];
-  const skills = conta(blocoTecnicas, /^\s*- "[^"]+"/gm);
+  const inline = blocoTecnicas.match(/^[ \t]*\[(.*)\]/)?.[1];
+  const skills = inline !== undefined
+    ? inline.split(",").filter((v) => limpa(v)).length
+    : conta(blocoTecnicas, /^\s*- (.*)$/gm);
 
   const nomeEmail = campo("nome") && campo("email");
   add("Perfil", "Nome e e-mail", nomeEmail ? "ok" : "erro", nomeEmail ? "preenchidos" : "nome ou e-mail vazio",
@@ -143,6 +153,9 @@ try { execSync("git rev-parse --is-inside-work-tree", { stdio: "ignore" }); } ca
 if (ehRepo) {
   const sensiveis = [
     ["curriculo/perfil.yaml", "curriculo/perfil.yaml"],
+    ["curriculo/perfil.novo.yaml", "curriculo/perfil.novo.yaml"],
+    ["curriculo/historico/teste.pdf", "curriculo/historico/"],
+    ["config/assinatura.html", "config/assinatura.*"],
     [".env", ".env"],
     ["vagas/teste.json", "vagas/*"],
     ["config/limites.md", "config/*.md"],

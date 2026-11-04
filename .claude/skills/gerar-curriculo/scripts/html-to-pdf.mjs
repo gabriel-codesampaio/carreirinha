@@ -9,17 +9,20 @@
  * Procura Chrome, Edge ou Chromium nos caminhos padrão de Windows, macOS e Linux.
  * Navegador em outro lugar: defina CHROME_PATH (no .env ou no ambiente) com o caminho do executável.
  */
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
 // CHROME_PATH pode vir do .env; dotenv é opcional aqui pra o script seguir sem dependências.
-try { await import("dotenv/config"); } catch {}
+try {
+  (await import("dotenv")).default.config({ path: fileURLToPath(new URL("../../../../.env", import.meta.url)) });
+} catch {}
 
 const execFileAsync = promisify(execFile);
+const TIMEOUT_MS = 60_000;
 
 const CANDIDATE_BROWSERS = [
   // Windows
@@ -85,16 +88,19 @@ async function main() {
     fileUrl,
   ];
 
-  await execFileAsync(browser, args, { windowsHide: true });
+  // Compara a data em vez de apagar antes: se o Chrome falhar, o PDF anterior continua lá.
+  const antes = existsSync(outputPath) ? statSync(outputPath).mtimeMs : null;
 
-  if (!existsSync(outputPath)) {
-    throw new Error("O Chrome rodou mas o PDF não foi criado. Verifique o HTML de entrada.");
+  await execFileAsync(browser, args, { windowsHide: true, timeout: TIMEOUT_MS });
+
+  if (!existsSync(outputPath) || statSync(outputPath).mtimeMs === antes) {
+    throw new Error("O Chrome rodou mas o PDF não foi gerado. Verifique o HTML de entrada.");
   }
 
   console.log(`PDF gerado: ${outputPath}`);
 }
 
 main().catch((err) => {
-  console.error("Falha ao gerar PDF:", err.message);
+  console.error("Falha ao gerar PDF:", err.killed ? `o navegador passou de ${TIMEOUT_MS / 1000} s e foi encerrado.` : err.message);
   process.exit(1);
 });

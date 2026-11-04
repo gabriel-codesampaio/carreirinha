@@ -5,6 +5,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const args = process.argv.slice(2);
 const confirm = args.includes('--confirm');
@@ -15,7 +16,7 @@ if (!Number.isFinite(dias) || dias < 1) {
   process.exit(1);
 }
 
-const raiz = process.cwd();
+const raiz = fileURLToPath(new URL('../../../../', import.meta.url));
 const hoje = new Date();
 hoje.setHours(0, 0, 0, 0);
 const corte = new Date(hoje.getTime() - dias * 86400000);
@@ -44,7 +45,28 @@ function dataDoArquivo(nome, caminho) {
   return { data: fs.statSync(caminho).mtime, origem: 'modificação' };
 }
 
+// Candidatura em aberto: o currículo, o HTML, o corpo do e-mail e o vaga-*.json ainda vão ser usados.
+const STATUS_ABERTO = /pendente|e-mail pronto|aguardando|curr[ií]culo pronto/i;
+const candidaturasPath = path.join(raiz, 'vagas/candidaturas.md');
+const emAberto = [];
+if (fs.existsSync(candidaturasPath)) {
+  for (const linha of fs.readFileSync(candidaturasPath, 'utf8').split(/\r?\n/)) {
+    const status = linha.split('|').map((c) => c.trim()).filter(Boolean).pop() ?? '';
+    if (!STATUS_ABERTO.test(status)) continue;
+    for (const m of linha.matchAll(/curriculo\/gerados\/([^\s|)]+)\.pdf/g)) emAberto.push({ base: m[1], status });
+  }
+}
+function candidaturaDoArquivo(nome) {
+  const semExt = nome.replace(/\.[^.]+$/, '');
+  return emAberto.find(({ base }) => {
+    if (semExt === base || semExt === `vaga-${base}`) return true;
+    const empresa = semExt.match(/^_email-(.+)$/)?.[1]; // _email-<empresa>.txt não tem cargo nem data
+    return Boolean(empresa) && base.startsWith(`${empresa}-`);
+  });
+}
+
 const apagar = [];
+const preservados = [];
 for (const { pasta, padrao } of ALVOS) {
   const dir = path.join(raiz, pasta);
   if (!fs.existsSync(dir)) continue;
@@ -53,7 +75,10 @@ for (const { pasta, padrao } of ALVOS) {
     const caminho = path.join(dir, nome);
     if (!fs.statSync(caminho).isFile()) continue;
     const { data, origem } = dataDoArquivo(nome, caminho);
-    if (data < corte) apagar.push({ rel: `${pasta}/${nome}`, caminho, data: fmt(data), origem });
+    if (data >= corte) continue;
+    const aberta = candidaturaDoArquivo(nome);
+    if (aberta) preservados.push({ rel: `${pasta}/${nome}`, status: aberta.status });
+    else apagar.push({ rel: `${pasta}/${nome}`, caminho, data: fmt(data), origem });
   }
 }
 
@@ -72,6 +97,8 @@ if (fs.existsSync(vistosPath)) {
 
 console.log(`Limpeza: itens com data anterior a ${fmt(corte)} (mais de ${dias} dias).`);
 console.log(`Modo: ${confirm ? 'APAGANDO' : 'rascunho (nada é apagado; use --confirm)'}\n`);
+for (const p of preservados) console.log(`Preservado: ${p.rel}  (candidatura em aberto: ${p.status})`);
+if (preservados.length) console.log('');
 if (!apagar.length && !vistosAntigos) {
   console.log('Nada para limpar.');
   process.exit(0);
@@ -89,9 +116,8 @@ if (vistosAntigos) {
 }
 
 // candidaturas.md: marca os caminhos de currículo apagados, sem apagar as linhas (é o histórico).
-const candPath = path.join(raiz, 'vagas/candidaturas.md');
-if (fs.existsSync(candPath)) {
-  let cand = fs.readFileSync(candPath, 'utf8');
+if (fs.existsSync(candidaturasPath)) {
+  let cand = fs.readFileSync(candidaturasPath, 'utf8');
   let marcados = 0;
   for (const a of apagar.filter((x) => x.rel.endsWith('.pdf'))) {
     if (cand.includes(a.rel)) {
@@ -99,7 +125,7 @@ if (fs.existsSync(candPath)) {
       marcados++;
     }
   }
-  if (marcados) fs.writeFileSync(candPath, cand);
+  if (marcados) fs.writeFileSync(candidaturasPath, cand);
   if (marcados) console.log(`candidaturas.md: ${marcados} currículo(s) marcado(s) como apagado(s).`);
 }
 
