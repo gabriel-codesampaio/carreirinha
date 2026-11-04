@@ -12,8 +12,9 @@
  *       Acrescenta todos os posts de novos.json ao posts-vistos.json; os índices listados ficam com vaga: true.
  */
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
-const VISTOS = "vagas/posts-vistos.json";
+const VISTOS = fileURLToPath(new URL("../../../../vagas/posts-vistos.json", import.meta.url));
 const [cmd, a, b, c] = process.argv.slice(2);
 const ler = (p) => JSON.parse(readFileSync(p, "utf8"));
 const vistos = existsSync(VISTOS) ? ler(VISTOS) : [];

@@ -19,6 +19,8 @@ Remove o que ficou velho: currículo gerado pra uma vaga de mais de uma semana a
 
 A idade vem da data `AAAA-MM-DD` no nome do arquivo; sem data no nome, da data de modificação.
 
+**Candidatura em aberto fica**: o script preserva o PDF, o HTML, o `_email-*.txt` e o `vaga-*.json` de toda linha de `vagas/candidaturas.md` com status `pendente`, `e-mail pronto`, `aguardando` ou `currículo pronto`, mesmo antigos, e lista esses arquivos como `Preservado:`.
+
 ## Passo a passo
 
 1. **Rascunho** (não apaga nada):
@@ -26,7 +28,7 @@ A idade vem da data `AAAA-MM-DD` no nome do arquivo; sem data no nome, da data d
    node ".claude/skills/limpar-dados/scripts/limpar.mjs"
    ```
    Para outro prazo: `--dias 14`.
-2. **Mostre a lista** ao usuário (arquivo + data). Se algum currículo for de vaga ainda com status `e-mail pronto` ou `pendente: você envia` em `vagas/candidaturas.md`, avise na lista.
+2. **Mostre a lista** ao usuário (arquivo + data), junto com o que foi preservado e por quê.
 3. **Apagar**: se o usuário pediu a limpeza, a lista e o envio vão na mesma etapa (mesmo padrão da `linkedin-conectar-recrutadores`): rode com `--confirm` logo depois de mostrar a lista. Se a limpeza foi sugerida por você e não pedida, pergunte antes.
    ```
    node ".claude/skills/limpar-dados/scripts/limpar.mjs" --confirm

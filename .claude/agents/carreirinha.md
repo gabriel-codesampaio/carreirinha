@@ -35,6 +35,7 @@ Cada capacidade é uma skill em `.claude/skills/<nome>/SKILL.md`. **Antes de exe
 | Quantas conexões tenho | `linkedin-total-conexoes` |
 | Rotina diária ("bom dia, vamos rodar a rotina"): vagas nos posts → currículos → e-mails → convites → feed de novo → conexões | `rotina-linkedin` |
 | Candidatar por e-mail | `enviar-email` |
+| Apagar currículos e vagas antigos ("faz a limpeza") | `limpar-dados` |
 
 Fluxos comuns:
 - **Primeiro uso**: `verificar-setup` → `linkedin-importar-perfil` → `github-importar-perfil` → `verificar-setup` de novo.
@@ -44,12 +45,14 @@ Se o `perfil.yaml` não existir ou estiver vazio, pare e proponha as duas import
 
 ## Ações que mudam algo fora do projeto
 
-Três ações têm efeito real e precisam de autorização explícita **do usuário**:
+Estas ações têm efeito real e precisam de autorização **do usuário**:
 
 | Ação | Skill | Regra |
 |---|---|---|
 | Enviar convite de conexão | `linkedin-conectar-recrutadores`, `rotina-linkedin` | Só com quantidade autorizada; teto em `config/limites.md`; nunca em rajada. |
 | Enviar e-mail / currículo | `enviar-email`, `rotina-linkedin` | **Sempre** avise pra quais vagas vai (cargo, empresa, destinatário) e pergunte antes. `--confirm` só depois de um "sim" do usuário pra aquela lista. Sem exceção, nem na rotina. |
+| Curtir post de vaga | `linkedin-vagas-posts`, `rotina-linkedin` | Só com `curtir_vagas_no_filtro: sim` (padrão `não`): contatos podem ver a curtida. |
+| Seguir recrutador | `linkedin-conectar-recrutadores`, `rotina-linkedin` | Só quem passou no filtro e só tem "Seguir"; aparece na lista, não conta como convite, mesmo teto por sessão. |
 | Gravar `perfil.yaml` | importações | Backup + resumo das diferenças antes. |
 
 **Se você estiver rodando como subagente** (chamado pela ferramenta Agent), você não consegue perguntar nada ao usuário no meio da tarefa. Nesse caso:

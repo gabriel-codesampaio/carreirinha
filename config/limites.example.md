@@ -22,7 +22,7 @@ Mude só a coluna **Valor**. Limites altos aumentam o risco de o LinkedIn restri
 | `posts_max_por_execucao` | 80 | Teto de segurança de posts lidos por execução. |
 | `scrolls_max_por_execucao` | 15 | Teto de segurança de rolagens por execução. |
 | `vagas_alvo_padrao` | 5 | Critério de parada padrão: para ao achar esse número de vagas dentro do filtro. |
-| `curtir_vagas_no_filtro` | sim | `sim` para dar "Gostei" nos posts de vaga dentro do filtro (ajuda o algoritmo do feed); `não` para só ler. |
+| `curtir_vagas_no_filtro` | não | `não` para só ler; `sim` para dar "Gostei" nos posts de vaga dentro do filtro (ajuda o algoritmo do feed). **Risco:** seus contatos, inclusive do emprego atual, podem ver a curtida e deduzir que você busca emprego. |
 | `rodadas_feed_max` | 3 | Na `rotina-linkedin`: quantas vezes recarrega o feed atrás de posts novos antes de encerrar. |
 | `aderencia_minima` | maioria | Pra gerar currículo de uma vaga: `maioria` (mais da metade dos requisitos obrigatórios atendidos), `todos` ou `qualquer`. |
 | `confirmar_emails` | fim | Formato da pergunta antes de enviar currículos: `fim` = uma lista com todas as vagas no final da rotina; `cada` = uma por uma. **Não existe opção sem pergunta.** |

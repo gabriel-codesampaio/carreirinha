@@ -74,7 +74,7 @@ Rode a `linkedin-total-conexoes`. Compare com a coluna Conexões da última linh
 ### 6. E-mails (a única pergunta da rotina, e ela nunca é pulada)
 Se houver vagas com `e-mail pronto`:
 **Nenhum currículo sai sem o usuário saber pra qual vaga vai e aprovar** (regra fixa dele; `confirmar_emails` só muda o formato da pergunta, nunca a desliga).
-- Com `confirmar_emails: fim` (padrão): mostre **uma lista** (empresa, cargo, destinatário, assunto, anexo, aderência) e pergunte **uma vez** se pode enviar todos, alguns ou nenhum. Envie os aprovados com `--confirm`, um por vez, e atualize o status pra `enviado em <data hora>`.
+- Com `confirmar_emails: fim` (padrão): mostre **uma lista** (empresa, cargo, destinatário, assunto, anexo, aderência) e pergunte **uma vez** se pode enviar todos, alguns ou nenhum. Envie os aprovados com `--confirm <hash do preview>`, um por vez, e atualize o status pra `enviado em <data hora>`.
 - Com `confirmar_emails: cada`: mostre o preview de cada um e pergunte um por um.
 - Sem resposta, ou se o modo automático bloquear: não envie. O status fica `e-mail pronto, aguardando você`.
 - **Rodando como subagente** (sem como perguntar): não envie nada; devolva a lista pra conversa principal.

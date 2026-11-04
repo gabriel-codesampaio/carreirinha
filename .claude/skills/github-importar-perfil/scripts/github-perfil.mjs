@@ -13,8 +13,11 @@
  *               depois os mais recentes). Padrão: 12.
  * --out         grava o JSON num arquivo em vez de imprimir.
  */
-import "dotenv/config";
+import dotenv from "dotenv";
 import { writeFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+
+dotenv.config({ path: fileURLToPath(new URL("../../../../.env", import.meta.url)) });
 
 const args = process.argv.slice(2);
 const usuario = args.find((a) => !a.startsWith("--"));
@@ -38,6 +41,9 @@ if (!/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/.test(usuario)) {
 const headers = { Accept: "application/vnd.github+json", "User-Agent": "carreirinha" };
 if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
 
+// Falha de coleta não pode parecer "repositório sem README" nem "perfil sem fixados".
+const avisos = [];
+
 async function api(caminho) {
   const res = await fetch(`https://api.github.com${caminho}`, { headers });
   if (res.status === 404) return null;
@@ -49,21 +55,34 @@ async function api(caminho) {
 }
 
 async function readme(repo) {
-  const res = await fetch(`https://api.github.com/repos/${usuario}/${repo}/readme`, {
-    headers: { ...headers, Accept: "application/vnd.github.raw" },
-  });
-  if (!res.ok) return null;
-  const texto = await res.text();
-  return texto.length > 3000 ? texto.slice(0, 3000) + "\n…(cortado)" : texto;
+  try {
+    const res = await fetch(`https://api.github.com/repos/${usuario}/${repo}/readme`, {
+      headers: { ...headers, Accept: "application/vnd.github.raw" },
+    });
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const texto = await res.text();
+    return texto.length > 3000 ? texto.slice(0, 3000) + "\n…(cortado)" : texto;
+  } catch (err) {
+    avisos.push(`README de ${repo} não foi lido (${err.message}); não é o mesmo que não ter README.`);
+    return null;
+  }
 }
 
 async function fixados() {
   // A API REST não expõe os repositórios fixados; eles vêm do HTML público do perfil.
-  const res = await fetch(`https://github.com/${usuario}`, { headers: { "User-Agent": "carreirinha" } });
-  if (!res.ok) return [];
-  const html = await res.text();
-  const re = new RegExp(`href="/${usuario}/([^"/]+)"[^>]*>\\s*<span class="repo"`, "g");
-  return [...new Set([...html.matchAll(re)].map((m) => m[1]))];
+  try {
+    const res = await fetch(`https://github.com/${usuario}`, { headers: { "User-Agent": "carreirinha" } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const html = await res.text();
+    const re = new RegExp(`href="/${usuario}/([^"/]+)"[^>]*>\\s*<span class="repo"`, "g");
+    const lista = [...new Set([...html.matchAll(re)].map((m) => m[1]))];
+    if (!lista.length) avisos.push("Nenhum repositório fixado encontrado: o perfil pode não ter, ou o HTML do GitHub mudou.");
+    return lista;
+  } catch (err) {
+    avisos.push(`Não foi possível ler os fixados (${err.message}).`);
+    return [];
+  }
 }
 
 const user = await api(`/users/${usuario}`);
@@ -116,6 +135,7 @@ const resultado = {
   repos_publicos: user.public_repos,
   readme_do_perfil: await readme(usuario),
   repositorios: detalhados,
+  avisos,
   ignorados: {
     forks: repos.filter((r) => r.fork).map((r) => r.name),
     arquivados: repos.filter((r) => r.archived).map((r) => r.name),
@@ -123,6 +143,7 @@ const resultado = {
 };
 
 const json = JSON.stringify(resultado, null, 2);
+for (const a of avisos) console.error(`Aviso: ${a}`);
 if (out) {
   await writeFile(out, json);
   console.log(`Salvo em ${out} (${detalhados.length} repositórios, ${Math.min(detalhar, detalhados.length)} detalhados)`);
