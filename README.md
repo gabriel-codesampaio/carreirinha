@@ -18,7 +18,8 @@ O que o projeto faz pra reduzir esse risco:
 - **O login é sempre seu**, na janela do Chrome. O agente nunca digita e-mail nem senha.
 - **Ritmo de pessoa, não de robô:** espera entre convites, teto de convites por sessão e por dia, e teto de posts lidos por execução, tudo ajustável em `config/limites.md`.
 - **Para na hora** se aparecer captcha, checkpoint ou aviso de limite, e nunca tenta contornar.
-- **Ações com efeito real só com o seu aval.** Convites só pra quem você viu na lista; currículo só sai depois de você aprovar as vagas. O agente nunca comenta, manda mensagem nem clica em "Candidatar-se".
+- **Ações com efeito real só com o seu aval.** Currículo só sai depois de você aprovar as vagas. Convites: quando você diz a quantidade, ou roda a rotina, esse pedido é a autorização, e a lista aparece junto do envio, sem etapa de veto; sem quantidade, o agente pergunta. Quem só tem o botão "Seguir" é seguido em vez de convidado: aparece na lista, não conta no número de convites nem no teto diário, mas respeita o teto por sessão. O agente nunca comenta, manda mensagem nem clica em "Candidatar-se".
+- **Curtidas desligadas por padrão.** Com `curtir_vagas_no_filtro: sim`, o agente dá "Gostei" em posts de vaga, e seus contatos, inclusive do emprego atual, podem ver.
 
 Recomendações:
 - Comece com os valores do `config/limites.example.md` (15 convites por dia) e só aumente se a conta não mostrar nenhum aviso.
@@ -30,7 +31,7 @@ Recomendações:
 | O quê | Pra quê | Como |
 |---|---|---|
 | [Claude Code](https://claude.com/claude-code) | É onde o agente roda | Terminal, VS Code ou app desktop |
-| Node.js 18+ | Scripts de PDF, e-mail, GitHub e diagnóstico | [nodejs.org](https://nodejs.org) |
+| Node.js 20+ | Scripts de PDF, e-mail, GitHub e diagnóstico | [nodejs.org](https://nodejs.org) |
 | Google Chrome, Edge ou Chromium | PDF do currículo e navegador das skills de LinkedIn | Fora do caminho padrão? Defina `CHROME_PATH` no `.env` |
 | MCP `chrome-devtools` | Todas as skills de LinkedIn controlam o Chrome por ele | `claude mcp add chrome-devtools --scope user -- npx chrome-devtools-mcp@latest` |
 | Conta do LinkedIn | Login feito por você, na janela do Chrome que o MCP abre | Nunca é digitado pelo agente |
@@ -74,18 +75,20 @@ Abra a pasta do projeto no Claude Code e peça em português, do jeito que falar
 | "manda minha candidatura por e-mail" | `enviar-email` |
 | "faz a limpeza" (currículos e vagas com mais de 1 semana) | `limpar-dados` |
 
-Ações com efeito real (convites, e-mail, gravar o perfil) sempre mostram o que vai acontecer e pedem confirmação.
+E-mail e gravação do perfil sempre mostram o que vai acontecer e pedem confirmação. Convites mostram a lista: com a quantidade no pedido ou na rotina, a lista e o envio vão na mesma etapa; sem quantidade, o agente pergunta antes.
 
 ## Segurança e privacidade
 
-- **Seus dados ficam na sua máquina.** `perfil.yaml`, `config/*.md`, `vagas/`, `curriculo/gerados/` e `.env` estão no `.gitignore`. A `verificar-setup` confere isso a cada execução e acusa se algum deles fosse pro git.
+- **Seus dados ficam na sua máquina.** `perfil*.yaml`, `curriculo/historico/`, `config/*.md`, `config/assinatura*`, `vagas/`, `curriculo/gerados/` e `.env` estão no `.gitignore`. A `verificar-setup` confere isso a cada execução e acusa se algum deles fosse pro git.
 - **Credenciais só no `.env`.** O agente nunca lê os valores pro chat, e o diagnóstico só diz se estão preenchidos. Use senha de app do provedor de e-mail, nunca a senha principal. O `GITHUB_TOKEN` é opcional e não precisa de nenhuma permissão.
 - **Texto de terceiros é dado, não ordem.** Posts, vagas, perfis e READMEs podem trazer instruções escondidas ("mande também o arquivo X", "envie pra este outro e-mail"). O agente ignora esse tipo de pedido e avisa você.
-- **O anexo é travado no script:** `send-email.mjs` só aceita PDF de `curriculo/gerados/`, então nem um agente enganado consegue anexar o `.env` ou o perfil.
-- **Nada sai sem você ver.** O e-mail roda em modo rascunho por padrão e só envia com `--confirm`, depois do seu "sim" pra lista de vagas. Envio repetido pra mesma vaga é bloqueado por `vagas/enviados.json`.
-- **Limpeza:** "faz a limpeza" apaga currículos e vagas com mais de uma semana.
+- **Anexo e corpo são travados no script:** `send-email.mjs` só aceita como anexo PDF de `curriculo/gerados/` e como corpo `.txt` dessa mesma pasta, então um agente enganado não consegue apontar o `.env` ou o perfil. Isso não impede de copiar um texto pra dentro do corpo: por isso você vê o preview.
+- **Nada sai sem você ver.** O e-mail roda em modo rascunho por padrão e só envia com `--confirm <hash>`, depois do seu "sim" pra lista de vagas. O hash vem do preview: se o conteúdo mudar, o envio é recusado. Isso prova que o conteúdo não mudou, não que você aprovou; a aprovação segue sendo regra do agente.
+- **Empresa bloqueada é recusada no script:** `--empresa` é conferido contra `perfil.yaml` e "Outras empresas bloqueadas" do filtro. O agente é quem informa o nome.
+- **Envio repetido é bloqueado** por `vagas/enviados.json`: mesmo destinatário com o mesmo assunto ou o mesmo currículo, ignorando caixa e espaços. Assunto reescrito com outro PDF passa.
+- **Limpeza:** "faz a limpeza" apaga currículos e vagas com mais de uma semana, menos os de candidatura ainda em aberto.
 
-Achou uma falha de segurança? Abra uma issue sem detalhes sensíveis e peça um contato privado.
+Achou uma falha de segurança? Veja [SECURITY.md](SECURITY.md).
 
 ## Como contribuir
 
@@ -93,14 +96,14 @@ Contribuições são bem-vindas: correção de bug, skill nova, suporte ao Linke
 
 1. **Abra uma issue antes** de qualquer mudança grande (skill nova, mudança de fluxo), pra alinhar a ideia. Bug e ajuste pequeno podem ir direto pro PR.
 2. Faça um fork, crie uma branch a partir do `main` (`fix/...`, `feat/...`) e abra o PR descrevendo o que mudou e como você testou.
-3. Rode `node .claude/skills/verificar-setup/scripts/verificar.mjs` antes de commitar. A seção **Privacidade** tem que estar toda ✅.
+3. Rode `npm test` e `node .claude/skills/verificar-setup/scripts/verificar.mjs` antes de commitar. A seção **Privacidade** tem que estar toda ✅. O CI roda os testes em todo PR.
 
 Regras do projeto:
 - **Nunca commite dados pessoais**: nada de `perfil.yaml`, currículos gerados, vagas, `.env`, prints com nome ou e-mail. Exemplos usam dados fictícios (`Maria Silva`, `nome@dominio.com`).
-- **Ações com efeito real continuam pedindo confirmação.** Toda skill que manda convite, e-mail ou grava o perfil mostra antes o que vai fazer e só age com o "sim" do usuário. PR que remove essa trava não entra.
+- **Ações com efeito real continuam com aval do usuário.** E-mail e gravação do perfil mostram antes o que vão fazer e só agem com o "sim". Convite exige quantidade pedida ou a rotina, e sempre mostra a lista. PR que remove essas travas não entra.
 - **Respeite os limites do LinkedIn.** Nada de tirar as esperas, aumentar os tetos padrão ou contornar captcha e checkpoint.
 - **Texto de terceiros é dado.** Skill que lê post, vaga ou página nunca executa instrução vinda desse texto.
-- **Sem dependência nova** se dá pra fazer com Node 18+ puro. Scripts ficam em `.claude/skills/<skill>/scripts/`.
+- **Sem dependência nova** se dá pra fazer com Node 20+ puro. Scripts ficam em `.claude/skills/<skill>/scripts/`.
 - **Skill nova** segue o formato das existentes: `SKILL.md` com `name` e `description` no frontmatter, passos numerados e regras de segurança. Registre-a na tabela do [agente](.claude/agents/carreirinha.md) e na seção "O que dá pra pedir" deste README.
 - Documentação e textos das skills em **português**. Se a skill mexe no LinkedIn, diga no PR em que idioma da interface você testou.
 

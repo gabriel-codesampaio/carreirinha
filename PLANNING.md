@@ -6,7 +6,7 @@ Agente pessoal que conhece a carreira de quem usa o projeto, gera currículos so
 **LinkedIn:** semi-automático via MCP de navegador (`mcp__chrome-devtools__*`), com a sessão do usuário. Login sempre manual; ações com efeito real só com autorização.
 **Template:** nada específico de um usuário nos arquivos versionados. Dados pessoais, preferências e histórico ficam fora do git.
 
-Última atualização: 2026-10-19.
+Última atualização: 2026-11-03.
 
 ---
 
@@ -33,13 +33,15 @@ Agente pessoal que conhece a carreira de quem usa o projeto, gera currículos so
 ### Networking
 - [x] **`linkedin-conectar-recrutadores`** — 16 termos de busca, filtro por headline, fluxo "Conectar → Enviar sem nota" validado. Teto por sessão em `config/limites.md`. Progresso por termo em `vagas/progresso-recrutadores.md`. 30 convites numa sessão em 2026-10-19 sem bloqueio.
 - [x] **`linkedin-total-conexoes`** — lê "N conexões" da página de conexões.
-- [x] **`rotina-linkedin`** — gatilho manual ("bom dia, vamos rodar a rotina"): vagas nos posts → currículo por vaga compatível → e-mail pronto ou pendente → convites (teto diário) → recarrega o feed e repete só com posts novos (`vagas/posts-vistos.json`) → conexões desde a última rotina → uma confirmação pra enviar os e-mails → `vagas/rotina-linkedin.md` + `vagas/candidaturas.md`. Fluxo novo definido em 2026-10-20, **ainda não rodado**; a versão anterior rodou em 2026-10-19 (30/30 convites, 0 vagas no filtro).
+- [x] **`rotina-linkedin`** — gatilho manual ("bom dia, vamos rodar a rotina"): vagas nos posts → currículo por vaga compatível → e-mail pronto ou pendente → convites (teto diário) → recarrega o feed e repete só com posts novos (`vagas/posts-vistos.json`) → conexões desde a última rotina → uma confirmação pra enviar os e-mails → `vagas/rotina-linkedin.md` + `vagas/candidaturas.md`. Fluxo novo definido em 2026-10-20 e em uso, última execução em 2026-11-03.
 
 ### Candidatura
-- [x] **`enviar-email`** — SMTP de qualquer provedor via `nodemailer`, modo rascunho por padrão, `--confirm` só com confirmação explícita, checa duplicidade em `vagas/enviados.json`. Usa o `vaga-*.json` da `gerar-curriculo`. E-mail em HTML com assinatura (`config/assinatura.*`, logo embutido via cid). `--testar` confere login sem enviar. Testado em 2026-10-19 com iCloud+ e domínio próprio. **Regra fixa: nenhum currículo sai sem o usuário ver as vagas e aprovar.**
+- [x] **`enviar-email`** — SMTP de qualquer provedor via `nodemailer`, modo rascunho por padrão, `--confirm` só com confirmação explícita, checa duplicidade em `vagas/enviados.json`. Usa o `vaga-*.json` da `gerar-curriculo`. E-mail em HTML com assinatura (`config/assinatura.*`, logo embutido via cid). `--testar` confere login sem enviar. Testado em 2026-10-19 com iCloud+ e domínio próprio; envios reais desde então. Trava de corpo, de empresa bloqueada e `--confirm <hash>` no script desde 2026-11-03. **Regra fixa: nenhum currículo sai sem o usuário ver as vagas e aprovar.**
 
 ### Operação
 - [x] **`verificar-setup`** — diagnóstico (`scripts/verificar.mjs` + checagem do MCP e do login no LinkedIn), com o que fica bloqueado e como resolver.
+- [x] **`limpar-dados`** — apaga currículos e vagas com mais de 1 semana (`scripts/limpar.mjs`), preservando candidaturas em aberto.
+- [x] Testes (`npm test`, `node:test`) e CI no GitHub Actions para as travas dos scripts.
 - [x] Configuração externa: `config/limites.md`, `config/filtro-vagas.md` (com `.example.md` versionados).
 
 ---
@@ -74,12 +76,14 @@ carreirinha/
 │       ├── linkedin-conectar-recrutadores/
 │       ├── linkedin-total-conexoes/
 │       ├── rotina-linkedin/
+│       ├── limpar-dados/               # SKILL.md + scripts/limpar.mjs
 │       └── enviar-email/               # SKILL.md + scripts/send-email.mjs
 ├── config/
 │   ├── limites.example.md              # versionado
 │   ├── filtro-vagas.example.md         # versionado
 │   ├── limites.md                      # do usuário (fora do git)
 │   └── filtro-vagas.md                 # do usuário (fora do git)
+├── test/                               # testes dos scripts
 ├── docs/
 │   └── mescla-perfil.md                # regras de união LinkedIn + GitHub
 ├── curriculo/
@@ -115,12 +119,11 @@ carreirinha/
 
 1. Testar a `linkedin-buscar-vagas` ao vivo.
 2. Busca de publicações por palavra-chave na `linkedin-vagas-posts` (e na rotina).
-3. Primeiro envio real pela `enviar-email`.
-4. Skill `buscar-vagas` com APIs públicas.
+3. Skill `buscar-vagas` com APIs públicas.
 
 ## Riscos
 
 - **E-mail**: nunca disparar sem confirmação explícita a cada envio.
 - **LinkedIn (convites)**: maior risco do projeto, porque muda o estado da conta. Teto por sessão, espaçamento, parar em captcha/aviso de limite.
 - **LinkedIn (leitura)**: ritmo de pessoa navegando, nunca volume de robô.
-- **Dados pessoais**: `perfil.yaml`, `historico/`, `gerados/`, `vagas/`, `config/*.md` e `.env` ficam fora do git (a `verificar-setup` confere). O repositório é público.
+- **Dados pessoais**: `perfil*.yaml`, `historico/`, `gerados/`, `vagas/`, `config/*.md`, `config/assinatura*` e `.env` ficam fora do git (a `verificar-setup` confere). O repositório é público.
