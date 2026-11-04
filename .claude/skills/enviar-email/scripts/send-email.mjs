@@ -9,12 +9,16 @@
  *   node send-email.mjs \
  *     --to "recrutador@empresa.com" \
  *     --subject "Candidatura - Dev Backend" \
- *     --body "caminho/para/corpo.txt" \
+ *     --body "curriculo/gerados/_email-empresa.txt" \
  *     --attach "curriculo/gerados/empresa-cargo-2026-10-14.pdf" \
  *     [--attach-name "Nome_Sobrenome_Curriculo_Cargo.pdf"] \
- *     [--confirm] [--force] [--sem-assinatura]
+ *     [--empresa "Empresa"] [--cliente "Cliente final"] \
+ *     [--confirm <hash>] [--force] [--sem-assinatura]
  *
+ * --body          só .txt de curriculo/gerados/ (trava contra enviar .env ou outro arquivo como corpo).
  * --attach-name   nome que o anexo tem pra quem recebe (o arquivo em disco não muda). Sem ele, vai o nome do arquivo.
+ * --empresa       obrigatório com --confirm. Recusa empresa de "Empresas que ficam fora" (filtro-vagas + perfil.yaml).
+ * --cliente       cliente final quando a vaga vem de consultoria (vários separados por vírgula); mesma trava.
  *
  * Cópia oculta: se EMAIL_BCC estiver no .env (um ou mais endereços separados por vírgula), todo envio
  * vai com esses endereços em CCO.
@@ -25,7 +29,8 @@
  *   node send-email.mjs --testar               # só testa conexão + login no SMTP, não envia nada
  *   node send-email.mjs --testar --enviar-teste # envia um e-mail de teste de EMAIL_FROM pra ele mesmo
  *
- * --confirm       envia de fato (sem essa flag, é só preview/dry-run)
+ * --confirm <hash>  envia de fato; o hash é o que o preview imprimiu e muda se remetente, destinatário, CCO,
+ *                 assunto, corpo ou anexo mudarem (sem essa flag, é só preview/dry-run)
  * --force         ignora a checagem de duplicidade em vagas/enviados.json
  * --sem-assinatura  envia sem a assinatura de config/
  * --testar        confere .env, conexão, TLS e login (transporter.verify), sem enviar
@@ -33,15 +38,20 @@
  *                 que o servidor aceita esse remetente (alias/domínio próprio). verify() não cobre isso.
  */
 import { readFile, mkdir, writeFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
-import { resolve, dirname, basename, sep } from "node:path";
-import "dotenv/config";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve, dirname, basename, relative, isAbsolute } from "node:path";
+import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
+import dotenv from "dotenv";
+
+const RAIZ = fileURLToPath(new URL("../../../../", import.meta.url));
+dotenv.config({ path: resolve(RAIZ, ".env") });
 
 function parseArgs(argv) {
   const out = { confirm: false, force: false, testar: false, enviarTeste: false, semAssinatura: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a === "--confirm") out.confirm = true;
+    if (a === "--confirm") out.confirm = argv[i + 1]?.startsWith("--") ? true : (argv[++i] ?? true);
     else if (a === "--force") out.force = true;
     else if (a === "--sem-assinatura") out.semAssinatura = true;
     else if (a === "--testar") out.testar = true;
@@ -57,8 +67,68 @@ function parseArgs(argv) {
 const bccConfigurado = () =>
   (process.env.EMAIL_BCC || "").split(",").map((e) => e.trim()).filter(Boolean);
 
-const LOG_PATH =resolve("vagas/enviados.json");
-const CONFIG_DIR = resolve("config");
+const LOG_PATH = resolve(RAIZ, "vagas/enviados.json");
+const CONFIG_DIR = resolve(RAIZ, "config");
+const PASTA_GERADOS = resolve(RAIZ, "curriculo/gerados");
+
+// relative(), e não startsWith: no Windows a letra do drive pode vir em caixa diferente.
+const dentroDe = (pasta, caminho) => {
+  const r = relative(pasta, caminho);
+  return Boolean(r) && !r.startsWith("..") && !isAbsolute(r);
+};
+
+const normalizar = (t) =>
+  t.normalize("NFC").toLowerCase().replace(/[–—]/g, "-").replace(/\s+/g, " ").trim();
+const enderecoDe = (t) => normalizar(t.match(/<([^>]+)>/)?.[1] ?? t);
+
+/** Nome comparável: sem caixa, acento, pontuação nem sufixo societário. */
+const nomeEmpresa = (t) =>
+  t.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\b(s a|sa|ltda|me|eireli|group|grupo|inc|llc|corp)\b/g, " ")
+    .replace(/\s+/g, " ").trim();
+
+const valorYaml = (t) => t.replace(/(^|\s+)#.*$/, "").trim().replace(/^["']|["']$/g, "").trim();
+
+/** Empresas e clientes de experiencias no perfil.yaml + "Outras empresas bloqueadas" do filtro. */
+function empresasBloqueadas() {
+  const lista = [];
+  const perfil = resolve(RAIZ, "curriculo/perfil.yaml");
+  if (existsSync(perfil)) {
+    // shortcut: lê só "- empresa:" e o bloco "clientes:" com "- nome:"; lista inline não entra, trocar por parser se o schema mudar.
+    let indentClientes = null;
+    for (const linha of readFileSync(perfil, "utf-8").split(/\r?\n/)) {
+      const indent = linha.match(/^\s*/)[0].length;
+      if (indentClientes !== null && linha.trim() && indent <= indentClientes) indentClientes = null;
+      if (/^\s*clientes:\s*(#.*)?$/.test(linha)) indentClientes = indent;
+      const m = linha.match(/^\s*- empresa:\s*(.+)$/) ?? (indentClientes !== null ? linha.match(/^\s*- nome:\s*(.+)$/) : null);
+      if (m) lista.push(valorYaml(m[1]));
+    }
+  }
+  const filtro = [resolve(CONFIG_DIR, "filtro-vagas.md"), resolve(CONFIG_DIR, "filtro-vagas.example.md")].find((p) => existsSync(p));
+  if (filtro) {
+    const secao = readFileSync(filtro, "utf-8").split(/^## Empresas que ficam fora/m)[1]?.split(/^## /m)[0] ?? "";
+    for (const m of secao.matchAll(/^- +(.+)$/gm)) lista.push(m[1].trim());
+  }
+  return [...new Set(lista.filter(Boolean))];
+}
+
+/** Recusa se algum nome bate com a lista, inteiro ou como palavras dentro do outro ("Itaú" x "Itaú Unibanco"). */
+function checarBloqueio(nomes) {
+  const bloqueadas = empresasBloqueadas().map((b) => [b, nomeEmpresa(b)]).filter(([, n]) => n);
+  for (const nome of nomes) {
+    const n = nomeEmpresa(nome);
+    if (!n) continue;
+    const achou = bloqueadas.find(([, b]) => ` ${n} `.includes(` ${b} `) || ` ${b} `.includes(` ${n} `));
+    if (achou) {
+      console.error(
+        `Envio recusado: "${nome}" está em "Empresas que ficam fora" (bate com "${achou[0]}").\n` +
+          `A lista vem de curriculo/perfil.yaml e de config/filtro-vagas.md. --force não libera este bloqueio.`
+      );
+      process.exit(1);
+    }
+  }
+}
 
 const escaparHtml = (t) =>
   t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -101,12 +171,17 @@ async function montarCorpo(texto, { semAssinatura = false } = {}) {
 
 async function readLog() {
   if (!existsSync(LOG_PATH)) return [];
+  // Log ilegível aborta: tratar como vazio desliga a checagem de duplicidade e o próximo envio apagaria o histórico.
+  let log;
   try {
-    const raw = await readFile(LOG_PATH, "utf-8");
-    return JSON.parse(raw || "[]");
-  } catch {
-    return [];
+    log = JSON.parse((await readFile(LOG_PATH, "utf-8")) || "[]");
+  } catch (err) {
+    throw new Error(`vagas/enviados.json está ilegível (${err.message}). Conserte o arquivo antes de enviar; nada foi enviado.`);
   }
+  if (!Array.isArray(log)) {
+    throw new Error("vagas/enviados.json não é uma lista. Conserte o arquivo antes de enviar; nada foi enviado.");
+  }
+  return log;
 }
 
 async function appendLog(entry) {
@@ -210,6 +285,11 @@ async function main() {
   }
 
   const bodyPath = resolve(args.body);
+  // Só corpo gerado pela skill: impede que um texto de vaga/post convença o agente a mandar o .env como corpo.
+  if (!dentroDe(PASTA_GERADOS, bodyPath) || !/\.txt$/i.test(bodyPath)) {
+    console.error(`Corpo recusado: só arquivos .txt de curriculo/gerados/ podem ser o corpo do e-mail (${bodyPath}).`);
+    process.exit(1);
+  }
   if (!existsSync(bodyPath)) {
     console.error(`Arquivo de corpo do e-mail não encontrado: ${bodyPath}`);
     process.exit(1);
@@ -220,8 +300,7 @@ async function main() {
   if (args.attach) {
     attachmentPath = resolve(args.attach);
     // Só currículo gerado: impede que um texto de vaga/post convença o agente a anexar .env ou o perfil.
-    const pastaGerados = resolve("curriculo/gerados") + sep;
-    if (!attachmentPath.startsWith(pastaGerados) || !/\.pdf$/i.test(attachmentPath)) {
+    if (!dentroDe(PASTA_GERADOS, attachmentPath) || !/\.pdf$/i.test(attachmentPath)) {
       console.error(`Anexo recusado: só PDFs de curriculo/gerados/ podem ser anexados (${attachmentPath}).`);
       process.exit(1);
     }
@@ -231,12 +310,23 @@ async function main() {
     }
   }
 
-  // Checagem de duplicidade (mesma vaga/destinatário já recebeu candidatura antes)
+  if (args.confirm && !args.empresa) {
+    console.error('Faltou --empresa: o envio confere a empresa da vaga contra "Empresas que ficam fora".');
+    process.exit(1);
+  }
+  checarBloqueio([args.empresa, ...(args.cliente ?? "").split(",")].filter(Boolean));
+
+  // Duplicidade: mesmo destinatário e (mesmo assunto ou mesmo currículo, que é gerado por vaga).
   const log = await readLog();
-  const dup = log.find((e) => e.to === args.to && e.subject === args.subject);
+  const dup = log.find(
+    (e) =>
+      enderecoDe(e.to) === enderecoDe(args.to) &&
+      (normalizar(e.subject) === normalizar(args.subject) ||
+        (attachmentPath && e.attachment && basename(e.attachment) === basename(attachmentPath)))
+  );
   if (dup && !args.force) {
     console.error(
-      `Já existe um envio registrado pra "${args.to}" com o assunto "${args.subject}" em ${dup.sentAt}.\n` +
+      `Já existe um envio registrado pra "${dup.to}" com o assunto "${dup.subject}" em ${dup.sentAt}.\n` +
         `Use --force se quiser enviar mesmo assim.`
     );
     process.exit(1);
@@ -257,9 +347,22 @@ async function main() {
   console.log(corpo.text);
   console.log("─────────────────────────────────────────────────");
 
+  const hash = createHash("sha256")
+    .update(JSON.stringify([process.env.EMAIL_FROM, args.to, bcc, args.subject, corpo.text, corpo.html, attachmentName]))
+    .update(attachmentPath ? await readFile(attachmentPath) : "")
+    .digest("hex")
+    .slice(0, 12);
+
   if (!args.confirm) {
-    console.log("\n[MODO RASCUNHO] Nada foi enviado. Rode de novo com --confirm pra disparar de fato.");
+    console.log(`\n[MODO RASCUNHO] Nada foi enviado. Depois da aprovação, rode de novo com --confirm ${hash}`);
     return;
+  }
+  if (args.confirm !== hash) {
+    console.error(
+      "Envio recusado: --confirm precisa do hash impresso pelo preview deste e-mail. " +
+        "Se o conteúdo mudou, mostre o preview novo e peça a aprovação de novo."
+    );
+    process.exit(1);
   }
 
   checarEnv();

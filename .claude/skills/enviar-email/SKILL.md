@@ -36,7 +36,7 @@ Se o `.env` não existir ou faltar alguma variável, o script avisa e não envia
 ## Passo a passo
 
 1. **Reunir os dados da vaga**: destinatário (e-mail do recrutador/RH), nome da vaga/empresa, e se já existe um currículo gerado pra essa vaga em `curriculo/gerados/` (se não existir, use a skill `gerar-curriculo` primeiro). A `gerar-curriculo` salva a vaga em `vagas/vaga-<empresa>-<cargo>-<data>.json`, com `contato`, `como_candidatar` e a `aderencia`: use esse arquivo em vez de perguntar de novo.
-   **Trava:** se a empresa da vaga (ou o cliente final, quando é consultoria) está em "Empresas que ficam fora" de `config/filtro-vagas.md` (empresas/clientes do `perfil.yaml` + lista de bloqueadas), não envie: avise o usuário e pare.
+   **Trava:** se a empresa da vaga (ou o cliente final, quando é consultoria) está em "Empresas que ficam fora" de `config/filtro-vagas.md` (empresas/clientes do `perfil.yaml` + lista de bloqueadas), não envie: avise o usuário e pare. O script confere de novo no envio: passe `--empresa "<empresa>"` e, em consultoria, `--cliente "<cliente final>"` (vários separados por vírgula). O `--force` não libera esse bloqueio.
 
 2. **Redigir o corpo do e-mail**, no idioma da vaga, **sempre ligando o que a vaga pede ao que o usuário já fez**. Nunca uma lista solta de tecnologias. Estrutura:
    1. **Saudação** com o primeiro nome de quem divulgou a vaga, se souber ("Olá, Mariana, tudo bem?").
@@ -45,7 +45,7 @@ Se o `.env` não existir ou faltar alguma variável, o script avisa e não envia
    4. **Uma linha** de fechamento: "Os detalhes estão no currículo em anexo, e fico à disposição para conversarmos."
    5. **Despedida e primeiro nome** de quem usa o projeto ("Abraço," + quebra de linha + primeiro nome).
 
-   Regras: nada de requisito "parcial" ou "não atende" apresentado como se o usuário tivesse; nenhum número que não esteja no perfil; no máximo ~90 palavras entre saudação e despedida. **Não** escreva telefone, e-mail ou site no corpo, porque a assinatura de `config/assinatura.html` entra sozinha no fim (versão HTML com logo + `config/assinatura.txt` na versão em texto). Use `--sem-assinatura` só se o usuário pedir. Salve o corpo em um arquivo temporário, ex: `curriculo/gerados/_email-<empresa>.txt`.
+   Regras: nada de requisito "parcial" ou "não atende" apresentado como se o usuário tivesse; nenhum número que não esteja no perfil; no máximo ~90 palavras entre saudação e despedida. **Não** escreva telefone, e-mail ou site no corpo, porque a assinatura de `config/assinatura.html` entra sozinha no fim (versão HTML com logo + `config/assinatura.txt` na versão em texto). Use `--sem-assinatura` só se o usuário pedir. Salve o corpo em `curriculo/gerados/_email-<empresa>.txt`: o script só aceita em `--body` arquivos `.txt` dessa pasta.
 
    **Assunto**, nesta ordem:
    1. Se a vaga **manda usar um assunto** ("enviem com o assunto: X"), use **exatamente** X.
@@ -71,15 +71,17 @@ Se o `.env` não existir ou faltar alguma variável, o script avisa e não envia
      --subject "<assunto>" \
      --body "<caminho-do-corpo.txt>" \
      --attach "<caminho-do-pdf-em-curriculo/gerados/>" \
-     --attach-name "<nome_arquivo_envio do JSON da vaga>"
+     --attach-name "<nome_arquivo_envio do JSON da vaga>" \
+     --empresa "<empresa da vaga>"
    ```
    O `--attach-name` é o nome que o recrutador vê no anexo (ex.: `Maria_Silva_Curriculo_Front-End_Senior.pdf`), definido pela `gerar-curriculo`. Se o JSON da vaga não tiver `nome_arquivo_envio`, monte o nome pela mesma regra (passo 7 da `gerar-curriculo`).
-   Isso roda em **modo rascunho por padrão** — mostra o preview completo (de/para/assunto/anexo/corpo) e não envia nada.
+   Isso roda em **modo rascunho por padrão** — mostra o preview completo (de/para/assunto/anexo/corpo), não envia nada e imprime no fim o **hash** deste e-mail.
 
 4. **Mostrar o preview ao usuário** e perguntar explicitamente se pode enviar. Só prossiga com uma confirmação afirmativa clara dele(a) (ex: "pode mandar", "sim", "confirma").
 
-5. **Enviar de fato** (só depois da confirmação): repita o mesmo comando acrescentando `--confirm` no final.
-   - O script checa duplicidade: se já existe um envio registrado pro mesmo destinatário + assunto em `vagas/enviados.json`, ele recusa enviar de novo (evita candidatura duplicada). Avise o usuário se isso acontecer — só use `--force` se ele(a) confirmar que quer reenviar mesmo assim.
+5. **Enviar de fato** (só depois da confirmação): repita o mesmo comando acrescentando `--confirm <hash do preview>` no final. Se o conteúdo mudou depois do preview, o script recusa: mostre o preview novo e peça o "sim" de novo.
+   - Se `vagas/enviados.json` estiver ilegível, o script para sem enviar: avise o usuário, não apague o arquivo.
+   - O script checa duplicidade: se já existe em `vagas/enviados.json` um envio pro mesmo destinatário com o mesmo assunto ou o mesmo currículo (ignorando caixa e espaços), ele recusa enviar de novo (evita candidatura duplicada). Avise o usuário se isso acontecer — só use `--force` se ele(a) confirmar que quer reenviar mesmo assim.
 
 6. **Confirmar o resultado** ao usuário (enviado com sucesso / erro), atualize o status da vaga em `vagas/candidaturas.md` (`enviado em <data hora>`) e apague o arquivo de corpo temporário se não precisar guardar.
 
