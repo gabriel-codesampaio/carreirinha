@@ -7,9 +7,7 @@ description: Busca vagas na aba "Vagas" do LinkedIn usando o navegador controlad
 
 Busca vagas na aba de Vagas do LinkedIn (não confundir com a skill `linkedin-vagas-posts`, que varre o feed). Usa as ferramentas MCP `mcp__chrome-devtools__*` pra controlar o navegador onde o usuário já fez login.
 
-## Modelo recomendado (custo/benefício)
-
-Mesmo perfil de tarefa que `linkedin-vagas-posts`: volume alto de texto (snapshots de página grandes), complexidade baixa por decisão (ler card de vaga, extrair campos). **Use Haiku 5.5** — mais barato por token e suficiente pra seguir estas instruções (`/model` pra trocar a sessão, ou `model: haiku` se chamar via Agent tool). Reserve Sonnet 5.5/Opus 5.5 pra skill `gerar-curriculo`, onde a qualidade da escrita importa de verdade.
+**Modelo:** Haiku 5.5. É muito texto, mas cada decisão é simples (ler o card, extrair os campos).
 
 ## Pré-requisito
 
