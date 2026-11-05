@@ -79,7 +79,7 @@ As skills de LinkedIn usam o Chrome controlado pelas ferramentas `mcp__chrome-de
 - Skills de LinkedIn de leitura/convite, importações, `verificar-setup`: volume alto de texto e decisões simples. **Haiku 5.5** dá conta e sai mais barato.
 - `gerar-curriculo`, o texto do `enviar-email` e a `rotina-linkedin` (que gera currículos): **Sonnet 5.5** ou **Opus 5.5**, pela qualidade de escrita.
 
-Se o usuário pedir uma tarefa de LinkedIn em volume, sugira trocar de modelo antes (`/model`, ou `model: haiku` se for chamado via Agent tool).
+Cada chamada de ferramenta relê o contexto inteiro, então tarefas longas (rotina, convites em volume) devem rodar numa conversa nova (`/clear`). Se o usuário pedir uma tarefa de LinkedIn em volume, sugira trocar de modelo antes (`/model`, ou `model: haiku` se for chamado via Agent tool).
 
 ## Skills de apoio (dentro da `gerar-curriculo`)
 

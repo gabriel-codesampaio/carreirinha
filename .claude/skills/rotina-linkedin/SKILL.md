@@ -12,12 +12,14 @@ Encadeia skills que já existem. **Não duplique a lógica delas aqui**: abra o 
 | Vagas nos posts | `linkedin-vagas-posts` |
 | Currículo por vaga | `gerar-curriculo` |
 | E-mail de candidatura | `enviar-email` |
-| Convites | `linkedin-conectar-recrutadores` |
+| Convites | `linkedin-conectar-recrutadores` (num subagente Haiku, etapa 3) |
 | Conexões | `linkedin-total-conexoes` |
 
 ## Modelo recomendado
 
-**Sonnet 5.5**, porque a rotina gera currículos. Haiku 5.5 dá conta da leitura, mas escreve pior. Numa sessão só, tudo roda no mesmo modelo.
+**Sonnet 5.5**, porque a rotina gera currículos. Os convites (etapa 3) vão pra um subagente Haiku 5.5.
+
+**Rode numa conversa nova** (`/clear` antes). Cada chamada de ferramenta relê todo o contexto: uma rotina que começa com 110k de outra tarefa custa várias vezes mais que uma que começa com 25k. Se a conversa já vier longa, sugira o `/clear` antes de começar.
 
 ## Antes de começar (sem perguntas)
 
@@ -62,7 +64,14 @@ Pule as que já estão em `vagas/candidaturas.md` (mesma empresa + cargo, ou mes
 5. **Registre** em `vagas/candidaturas.md` (crie com o cabeçalho abaixo se não existir).
 
 ### 3. Convites
-Rode a `linkedin-conectar-recrutadores` com `X` convites, mostrando a lista e enviando na mesma etapa: ao rodar a rotina, o usuário já autorizou esse número. Atualize `vagas/progresso-recrutadores.md` no fim, como a skill pede. Se o modo automático do Claude Code bloquear um envio, **não insista nem contorne**: anote quantos foram confirmados como `Pendente` e siga pra etapa 4.
+Ao rodar a rotina, o usuário já autorizou `X` convites. **Não rode os convites na conversa principal**: são umas 6 chamadas por convite, e cada uma relê o contexto inteiro da rotina. Chame um subagente:
+
+```
+Agent(subagent_type: "carreirinha", model: "haiku", description: "Convites a recrutadores",
+  prompt: "Rode a skill linkedin-conectar-recrutadores. Autorização do usuário: envie <X> convites hoje (rotina-linkedin), mostrando a lista e enviando na mesma etapa. Atualize vagas/progresso-recrutadores.md no fim. Responda só com: convites enviados confirmados como Pendente (nomes), pessoas seguidas (nomes), pulados pela headline (contagem), termos usados e se houve bloqueio, checkpoint ou modal aberto.")
+```
+
+Não leia o `SKILL.md` dos convites na conversa principal, porque o subagente lê. Use o número de convites que ele devolveu (os confirmados como Pendente) no histórico. Se ele relatar bloqueio do modo automático, **não insista nem contorne**: anote o que foi confirmado e siga pra etapa 4. Se o subagente não puder ser chamado (ferramenta Agent indisponível), rode a skill aqui mesmo.
 
 ### 4. Recarregar e repetir
 - Recarregue o feed (`navigate_page` com `type: "reload"`) e rode de novo as etapas 1 e 2, **só com posts que não estão em `posts-vistos.json`**.
